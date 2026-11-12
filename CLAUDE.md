@@ -38,7 +38,7 @@ Migrations: `pnpm db:generate` then apply. Note `drizzle-kit migrate` swallows e
 ## Data model
 
 - `profiles` — mirrors `auth.users` (trigger `v3.handle_new_user`); holds `inbound_token`. Inbound address = `<inbound_token>@<INBOUND_EMAIL_DOMAIN>` (Resend receiving domain, any local part).
-- `books` — shared catalog (ASIN is the match key). `user_books` — a user's library; nothing shows unless a row exists. `highlights` FKs `(user_id, book_id)` to it.
+- `books` — shared catalog (ASIN is the match key). `user_books` — a user's library; nothing shows unless a row exists with `status = 'active'`. Remove a book by setting `status = 'removed'`, never by deleting the row (that cascades to highlights/lineage and strands insights); every library read in `lib/authz/` filters on `active`. `highlights` FKs `(user_id, book_id)` to it.
 - `ingestion_events` — one row per inbound email; unique `resend_email_id` makes webhook retries idempotent.
 - `highlights` — raw highlights + pipeline `status` (`pending → contextualized → researched`, or `discarded`/`failed`). Dedup key: `(user_id, book_id, source, external_id)`.
 - `insights` — per-user, typed (`event|person|place|concept`), `status` `published|hidden` (published by default — no review gate). Period = astronomical year + optional month/day for start and end (null end = the start's own precision unit); generated `starts_value`/`ends_value` for indexed overlap. Area = PostGIS `geometry(Geometry, 4326)` (point or polygon). Read it with `ST_AsGeoJSON(location)`, write with `ST_SetSRID(ST_GeomFromGeoJSON(..), 4326)`.

@@ -82,6 +82,12 @@ export const highlightStatusEnum = v3.enum("highlight_status", [
   "failed",
 ]);
 
+/** A user's relationship to a book. Removal is soft so lineage is preserved. */
+export const userBookStatusEnum = v3.enum("user_book_status", [
+  "active", // in the library — default
+  "removed", // taken out of the library; rows kept, hidden from all reads
+]);
+
 export const noteOriginEnum = v3.enum("note_origin", ["typed", "handwritten"]);
 
 export const insightTypeEnum = v3.enum("insight_type", [
@@ -152,6 +158,10 @@ export const userBooks = v3
       bookId: uuid("book_id")
         .notNull()
         .references(() => books.id, { onDelete: "cascade" }),
+      // Remove a book by setting `removed`, never by deleting the row: deleting
+      // cascades to highlights and insight_highlights and strands insights.
+      // Every library read in lib/authz/ must filter on status = 'active'.
+      status: userBookStatusEnum("status").notNull().default("active"),
     },
     (t) => [
       unique("user_books_user_book_unique").on(t.userId, t.bookId),
@@ -305,6 +315,19 @@ export const insights = v3
     },
     (t) => [
       check("insights_period_ordered", sql`${t.endsValue} >= ${t.startsValue}`),
+      // Insights come from LLM output: reject out-of-range or orphaned parts so
+      // they can't skew starts_value / ends_value.
+      check(
+        "insights_starts_valid",
+        sql`(${t.startsMonth} IS NULL OR ${t.startsMonth} BETWEEN 1 AND 12)
+          AND (${t.startsDay} IS NULL OR (${t.startsDay} BETWEEN 1 AND 31 AND ${t.startsMonth} IS NOT NULL))`,
+      ),
+      check(
+        "insights_ends_valid",
+        sql`(${t.endsYear} IS NOT NULL OR (${t.endsMonth} IS NULL AND ${t.endsDay} IS NULL))
+          AND (${t.endsMonth} IS NULL OR ${t.endsMonth} BETWEEN 1 AND 12)
+          AND (${t.endsDay} IS NULL OR (${t.endsDay} BETWEEN 1 AND 31 AND ${t.endsMonth} IS NOT NULL))`,
+      ),
       index("insights_user_status_idx").on(t.userId, t.status),
       index("insights_period_idx").on(t.startsValue, t.endsValue),
       index("insights_location_gist_idx").using("gist", t.location),
