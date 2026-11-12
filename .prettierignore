@@ -2,3 +2,6 @@
 node_modules
 pnpm-lock.yaml
 drizzle/meta
+app/.well-known/workflow
+.workflow-data
+.workflow-vitest
