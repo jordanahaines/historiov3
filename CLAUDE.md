@@ -27,13 +27,14 @@ Next.js (App Router) · TypeScript strict · Drizzle ORM · Supabase (Postgres +
 - **Drizzle owns all database access.** Never `supabase.from(...)`. supabase-js is for **Auth and Storage only**. The Supabase Data API is disabled.
 - Drizzle connects directly as the table owner, which bypasses RLS. RLS is enabled on every table with no policies (deny-by-default backstop); **authorization is application code** in `lib/authz/`.
 - Every read/write of user data goes through a function in `lib/authz/` that takes the viewer's id explicitly. No inline Drizzle queries in components, Server Actions, or Route Handlers.
+- **Keep `postgres` (postgres.js) on `^3.4.9`.** The 4.x line hangs under concurrent use through Supabase's pooler (statement timeouts on trivial selects), which `pnpm add postgres` will happily install.
 - `DATABASE_URL` = transaction-mode pooler (port 6543, `prepare: false`) for runtime. `DATABASE_URL_DIRECT` = direct connection (5432) for migrations only.
 
 ### The `v3` Postgres schema
 
 This project shares a Supabase project with the old app. **Everything lives in the `v3` schema; never touch `public` or `drizzle`.** The migration journal is `v3.__drizzle_migrations`. Extensions (`postgis`, `pg_trgm`) live in Supabase's `extensions` schema. Source of truth: `lib/db/schema.ts`.
 
-Migrations: `pnpm db:generate` then apply. Note `drizzle-kit migrate` swallows errors silently in this setup — if it exits quietly but tables are missing, apply with `drizzle-orm/postgres-js/migrator` (`migrationsSchema: "v3"`, `migrationsTable: "__drizzle_migrations"`) in a script to see the real error. Custom SQL (triggers, extensions) goes in `drizzle-kit generate --custom`.
+Migrations: `pnpm db:generate`, then `pnpm db:migrate` (a script using drizzle's programmatic migrator — `drizzle-kit migrate` itself swallows errors silently in this setup). Custom SQL (triggers, extensions, Storage buckets) goes in `drizzle-kit generate --custom`.
 
 ## Data model
 
@@ -44,9 +45,11 @@ Migrations: `pnpm db:generate` then apply. Note `drizzle-kit migrate` swallows e
 - `insights` — per-user, typed (`event|person|place|concept`), `status` `published|hidden` (published by default — no review gate). Period = astronomical year + optional month/day for start and end (null end = the start's own precision unit); generated `starts_value`/`ends_value` for indexed overlap. Area = PostGIS `geometry(Geometry, 4326)` (point or polygon). Read it with `ST_AsGeoJSON(location)`, write with `ST_SetSRID(ST_GeomFromGeoJSON(..), 4326)`.
 - `insight_highlights` — lineage; a book's insights and an insight's books derive through it. `contribution` stores what each highlight said, unmerged.
 
+Pipeline flow, setup and local commands: `docs/ingestion-pipeline.md`. Workflow step functions live in `lib/workflows/`; keep workflow bodies pure orchestration and all logic in `"use step"` functions (they pass ids/paths, never bytes). Tests: `pnpm test` (unit), `pnpm test:integration` (real `v3` DB), `pnpm test:workflows`.
+
 ### Duplicate Insights: merge and enrich
 
-Before creating an Insight, look for an existing one for the same user: same `type`, overlapping period, intersecting/nearby location, trigram-similar title or alias. Shortlist → LLM "same real-world thing?" judge (structured output). On a match: add an `insight_highlights` row (skip if it exists — idempotent), then **regenerate** the description from all contributions (never patch iteratively), add the new title to `aliases`, set `last_enriched_at`. If unsure, create a new Insight — a duplicate is cheaper than a wrong merge. Serialize match-then-write per user (advisory lock / workflow concurrency key) so parallel highlights don't both insert. Known open problems (drift, conflicting dates, user edits, undo) are deferred.
+Implemented in `lib/insights/merge-candidates.ts` (details in `docs/ingestion-pipeline.md`). Before creating an Insight, look for an existing one for the same user: same `type`, overlapping period, intersecting/nearby location, trigram-similar title or alias. Shortlist → LLM "same real-world thing?" judge (structured output). On a match: add an `insight_highlights` row (skip if it exists — idempotent), then **regenerate** the description from all contributions (never patch iteratively), add the new title to `aliases`, set `last_enriched_at`. If unsure, create a new Insight — a duplicate is cheaper than a wrong merge. Serialize match-then-write per user (advisory lock / workflow concurrency key) so parallel highlights don't both insert. Known open problems (drift, conflicting dates, user edits, undo) are deferred.
 
 ## Coding conventions
 
