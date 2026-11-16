@@ -1,16 +1,14 @@
 # CLAUDE.md
 
-Technical reference for Claude Code working on Historio v3. This repo is a deliberate restart of the original `historio-app` (Boards + six Elements), which grew beyond its purpose. **Scope discipline is the point of v3**: see everything you've read — Kindle highlights, turned into Insights — on one map and one timeline. Don't bring back features from v1 (Elements, grid layouts, comments, forking, per-Element filters) unless an epic below calls for them.
+Technical reference for Claude Code working on Historio v3. This repo is a deliberate restart of the original `historio-app` (Boards + six Elements), which grew beyond its purpose. **Scope discipline is the point of v3**: see everything you've read — Kindle highlights, turned into Insights — on one map and one timeline. Don't bring back features from v1 (Elements, grid layouts, comments, forking, per-Element filters) unless the Project Overview (below) calls for them.
 
-## Epics
+## Project Context (Notion)
 
-- **E1 — Library.** Email Kindle Scribe highlights to a per-user Historio address; parse, contextualize, research into Insights; show them on a Library Map and Library Timeline, then side-by-side with cross-filtering.
-- **E1.5 — Accounts.** Any user can sign up; add Readwise (or other) import in addition to Scribe email.
-- **E2 — Boards.** Boards are always map + timeline side-by-side; they differ only in which books/insights they include. An agent configures, enriches, and answers questions on a board. Boards can be public (view-only).
+The **[Historio v3: Project Overview](https://app.notion.com/p/4162dd9d3fb7813a8ba0cd884c1eac22)** page in Notion is the single source of truth for product context: vision, core concepts, epics and scope (what is in scope now), the feature list, principles, sitemap and its decisions (routes and nav), plan/status, and open questions. It is deliberately **not** duplicated here.
 
-Only E1 is in scope until told otherwise, but nothing in the schema should block E1.5/E2 (everything is already per-user).
-
-**Project overview (vision, concepts, principles, sitemap, open questions):** [Historio v3: Project Overview](https://app.notion.com/p/4162dd9d3fb7813a8ba0cd884c1eac22) in Notion. Read it before designing or speccing a page; the sitemap there is the source of truth for routes and nav.
+- **Before implementing or speccing a task, fetch it** with `notion-fetch` and make sure the work matches the epic scope and sitemap. Only work in scope is in scope; if a task needs something the Overview marks as a later epic or "Future", flag it rather than building it.
+- **Keep it up to date.** When your work changes anything the Overview describes — a feature shipped or changed, a decision made, a route added or moved, an open question resolved, plan/status moved — update the page (via the Notion MCP) in the same task, and say what you changed in the PR description. If you only notice it is stale or wrong, tell the user instead of silently editing.
+- Technical conventions live in this file. If the Overview and the code disagree on a technical point, flag it rather than guessing.
 
 ## Project Management
 
@@ -23,20 +21,6 @@ Issues live in the **Historio Product Roadmap** Notion database (shared with the
 ## Tech Stack
 
 Next.js (App Router) · TypeScript strict · Drizzle ORM · Supabase (Postgres + Auth + Storage) · HeroUI · Tailwind CSS (SCSS only where Tailwind can't) · Vercel · Vercel AI SDK via AI Gateway · MapLibre GL JS + Stadia Maps · vis-timeline (thin custom React wrapper) · Resend (inbound email) · Vitest + React Testing Library · pnpm.
-
-## Architecture: Drizzle + Supabase split
-
-- **Drizzle owns all database access.** Never `supabase.from(...)`. supabase-js is for **Auth and Storage only**. The Supabase Data API is disabled.
-- Drizzle connects directly as the table owner, which bypasses RLS. RLS is enabled on every table with no policies (deny-by-default backstop); **authorization is application code** in `lib/authz/`.
-- Every read/write of user data goes through a function in `lib/authz/` that takes the viewer's id explicitly. No inline Drizzle queries in components, Server Actions, or Route Handlers.
-- **Keep `postgres` (postgres.js) on `^3.4.9`.** The 4.x line hangs under concurrent use through Supabase's pooler (statement timeouts on trivial selects), which `pnpm add postgres` will happily install.
-- `DATABASE_URL` = transaction-mode pooler (port 6543, `prepare: false`) for runtime. `DATABASE_URL_DIRECT` = direct connection (5432) for migrations only.
-
-### The `v3` Postgres schema
-
-This project shares a Supabase project with the old app. **Everything lives in the `v3` schema; never touch `public` or `drizzle`.** The migration journal is `v3.__drizzle_migrations`. Extensions (`postgis`, `pg_trgm`) live in Supabase's `extensions` schema. Source of truth: `lib/db/schema.ts`.
-
-Migrations: `pnpm db:generate`, then `pnpm db:migrate` (a script using drizzle's programmatic migrator — `drizzle-kit migrate` itself swallows errors silently in this setup). Custom SQL (triggers, extensions, Storage buckets) goes in `drizzle-kit generate --custom`.
 
 ## Data model
 
