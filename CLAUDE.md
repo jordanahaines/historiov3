@@ -10,6 +10,8 @@ Technical reference for Claude Code working on Historio v3. This repo is a delib
 
 Only E1 is in scope until told otherwise, but nothing in the schema should block E1.5/E2 (everything is already per-user).
 
+**Project overview (vision, concepts, principles, sitemap, open questions):** [Historio v3: Project Overview](https://app.notion.com/p/4162dd9d3fb7813a8ba0cd884c1eac22) in Notion. Read it before designing or speccing a page; the sitemap there is the source of truth for routes and nav.
+
 ## Project Management
 
 issue_tracker: notion
@@ -56,6 +58,7 @@ Implemented in `lib/insights/merge-candidates.ts` (details in `docs/ingestion-pi
 - Strict TypeScript, no `any` without a comment. Prefer `type`. Validate all external input (forms, webhooks, AI structured output) with `zod`.
 - Server Components for reads, Server Actions for mutations, Route Handlers only for external callers (the Resend webhook).
 - Routes in `app/`, shared components in `components/<feature>/`. One component per file, filename matches the export. DB schema `lib/db/schema.ts`, authz `lib/authz/`, AI prompts `lib/ai/prompts/`. Components `PascalCase`, other files `kebab-case`, DB `snake_case` mapped to camelCase in TS.
+- Library lens/scope/search filtering is client-side state (load the user's library once, filter in the browser); changing a filter must not trigger a server re-render. Mirror scope to the URL with `history.replaceState`, not router navigation.
 - Keep logic out of JSX: compute values above the `return`; extract a component when a list item needs more than a line or two.
 - Tailwind first; HeroUI before custom UI. Map Elements/cards have sharp corners (`rounded-none`).
 - AI: structured output for anything that becomes an Insight; prompts in `lib/ai/prompts/`; every model call uses `resolveModel(ENV_VAR, DEFAULT)` pattern with a documented env var; default to AI Gateway `"provider/model"` strings.
