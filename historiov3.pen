@@ -3491,40 +3491,6 @@
           "children": [
             {
               "type": "frame",
-              "id": "k2Hq1G",
-              "name": "Boards Tab",
-              "height": 44,
-              "gap": 6,
-              "padding": [
-                0,
-                2
-              ],
-              "alignItems": "center",
-              "children": [
-                {
-                  "type": "text",
-                  "id": "q1E0T",
-                  "name": "Boards",
-                  "fill": "$ink-secondary",
-                  "content": "Boards",
-                  "fontFamily": "$font-sans",
-                  "fontSize": 14,
-                  "fontWeight": "500"
-                },
-                {
-                  "type": "text",
-                  "id": "iANTT",
-                  "name": "Boards count",
-                  "fill": "$ink-muted",
-                  "content": "6",
-                  "fontFamily": "$font-sans",
-                  "fontSize": 12,
-                  "fontWeight": "normal"
-                }
-              ]
-            },
-            {
-              "type": "frame",
               "id": "i4QBk4",
               "name": "Books Tab",
               "height": 44,
@@ -7515,40 +7481,6 @@
           "children": [
             {
               "type": "frame",
-              "id": "MJTKZ",
-              "name": "Boards Tab",
-              "height": 44,
-              "gap": 6,
-              "padding": [
-                0,
-                2
-              ],
-              "alignItems": "center",
-              "children": [
-                {
-                  "type": "text",
-                  "id": "qP8NN",
-                  "name": "Boards",
-                  "fill": "$ink-secondary",
-                  "content": "Boards",
-                  "fontFamily": "$font-sans",
-                  "fontSize": 14,
-                  "fontWeight": "500"
-                },
-                {
-                  "type": "text",
-                  "id": "g3qcIi",
-                  "name": "Boards count",
-                  "fill": "$ink-muted",
-                  "content": "6",
-                  "fontFamily": "$font-sans",
-                  "fontSize": 12,
-                  "fontWeight": "normal"
-                }
-              ]
-            },
-            {
-              "type": "frame",
               "id": "TRL2k",
               "name": "Books Tab",
               "height": 44,
@@ -8870,40 +8802,6 @@
           ],
           "alignItems": "center",
           "children": [
-            {
-              "type": "frame",
-              "id": "v8MFL",
-              "name": "Boards Tab",
-              "height": 44,
-              "gap": 6,
-              "padding": [
-                0,
-                2
-              ],
-              "alignItems": "center",
-              "children": [
-                {
-                  "type": "text",
-                  "id": "dHZHW",
-                  "name": "Boards",
-                  "fill": "$ink-secondary",
-                  "content": "Boards",
-                  "fontFamily": "$font-sans",
-                  "fontSize": 14,
-                  "fontWeight": "500"
-                },
-                {
-                  "type": "text",
-                  "id": "j0xVo",
-                  "name": "Boards count",
-                  "fill": "$ink-muted",
-                  "content": "6",
-                  "fontFamily": "$font-sans",
-                  "fontSize": 12,
-                  "fontWeight": "normal"
-                }
-              ]
-            },
             {
               "type": "frame",
               "id": "FTJoW",
@@ -10932,7 +10830,7 @@
       "id": "v8qeOS",
       "x": 0,
       "y": 5238,
-      "name": "Library - Boards",
+      "name": "Boards - list (E2 draft)",
       "clip": true,
       "width": 1440,
       "height": 900,
@@ -10994,27 +10892,27 @@
                       }
                     },
                     {
-                      "id": "kqtd5",
+                      "id": "fHANG",
                       "type": "ref",
                       "ref": "VsKTE",
                       "name": "Library",
-                      "fill": "$wash",
                       "descendants": {
                         "G5qjw": {
                           "content": "Library",
-                          "fill": "$ink"
+                          "fill": "$ink-secondary"
                         }
                       }
                     },
                     {
-                      "id": "U133c",
+                      "id": "a4N7cu",
                       "type": "ref",
                       "ref": "VsKTE",
                       "name": "Boards",
+                      "fill": "$wash",
                       "descendants": {
                         "G5qjw": {
                           "content": "Boards",
-                          "fill": "$ink-secondary"
+                          "fill": "$ink"
                         }
                       }
                     },
@@ -11073,180 +10971,6 @@
                       "fontWeight": "500"
                     }
                   ]
-                }
-              ]
-            }
-          ]
-        },
-        {
-          "type": "frame",
-          "id": "p1zQ5",
-          "name": "Section Menu",
-          "width": "fill_container",
-          "height": 44,
-          "stroke": "$border",
-          "strokeWidth": {
-            "bottom": 1
-          },
-          "gap": 28,
-          "padding": [
-            0,
-            20
-          ],
-          "alignItems": "center",
-          "children": [
-            {
-              "type": "frame",
-              "id": "s2kTH",
-              "name": "Boards Tab",
-              "height": 44,
-              "gap": 6,
-              "padding": [
-                0,
-                2
-              ],
-              "alignItems": "center",
-              "children": [
-                {
-                  "type": "text",
-                  "id": "BWPzB",
-                  "name": "Boards",
-                  "fill": "$ink",
-                  "content": "Boards",
-                  "fontFamily": "$font-sans",
-                  "fontSize": 14,
-                  "fontWeight": "600"
-                },
-                {
-                  "type": "text",
-                  "id": "IHuyH",
-                  "name": "Boards count",
-                  "fill": "$ink-muted",
-                  "content": "6",
-                  "fontFamily": "$font-sans",
-                  "fontSize": 12,
-                  "fontWeight": "normal"
-                },
-                {
-                  "type": "path",
-                  "id": "s9Lcr",
-                  "layoutPosition": "absolute",
-                  "x": 0,
-                  "y": 38,
-                  "name": "Marker Underline",
-                  "geometry": "M0 3.1c0-1.2 1.5-1.8 5-1.8 11.5-0.3 28 0.4 44.5 0.1 8.58-0.2 10.5 0.2 12.5 0.1 4 0.1 5 1.1 4 1.9-1 0.9-5 1-9 0.9-10.8 0.3-30.6-0.3-43.8 0.1-3.2 0.2-13.2-0.2-13.2-1.3z",
-                  "viewBox": [
-                    0,
-                    0,
-                    66,
-                    6
-                  ],
-                  "fill": "$ink",
-                  "width": 66,
-                  "height": 6
-                }
-              ]
-            },
-            {
-              "type": "frame",
-              "id": "vwtGL",
-              "name": "Books Tab",
-              "height": 44,
-              "gap": 6,
-              "padding": [
-                0,
-                2
-              ],
-              "alignItems": "center",
-              "children": [
-                {
-                  "type": "text",
-                  "id": "Y6rJo",
-                  "name": "Books",
-                  "fill": "$ink-secondary",
-                  "content": "Books",
-                  "fontFamily": "$font-sans",
-                  "fontSize": 14,
-                  "fontWeight": "500"
-                },
-                {
-                  "type": "text",
-                  "id": "y7SF7E",
-                  "name": "Books count",
-                  "fill": "$ink-muted",
-                  "content": "3",
-                  "fontFamily": "$font-sans",
-                  "fontSize": 12,
-                  "fontWeight": "normal"
-                }
-              ]
-            },
-            {
-              "type": "frame",
-              "id": "aYCOS",
-              "name": "Highlights Tab",
-              "height": 44,
-              "gap": 6,
-              "padding": [
-                0,
-                2
-              ],
-              "alignItems": "center",
-              "children": [
-                {
-                  "type": "text",
-                  "id": "Ee3p5",
-                  "name": "Highlights",
-                  "fill": "$ink-secondary",
-                  "content": "Highlights",
-                  "fontFamily": "$font-sans",
-                  "fontSize": 14,
-                  "fontWeight": "500"
-                },
-                {
-                  "type": "text",
-                  "id": "RNwWd",
-                  "name": "Highlights count",
-                  "fill": "$ink-muted",
-                  "content": "42",
-                  "fontFamily": "$font-sans",
-                  "fontSize": 12,
-                  "fontWeight": "normal"
-                }
-              ]
-            },
-            {
-              "type": "frame",
-              "id": "S8XmM",
-              "name": "Insights Tab",
-              "height": 44,
-              "stroke": "$ink",
-              "gap": 6,
-              "padding": [
-                0,
-                2
-              ],
-              "alignItems": "center",
-              "children": [
-                {
-                  "type": "text",
-                  "id": "JwzZv",
-                  "name": "Insights",
-                  "fill": "$ink-secondary",
-                  "content": "Insights",
-                  "fontFamily": "$font-sans",
-                  "fontSize": 14,
-                  "fontWeight": "500"
-                },
-                {
-                  "type": "text",
-                  "id": "k3FuH",
-                  "name": "Insights count",
-                  "fill": "$ink-muted",
-                  "content": "18",
-                  "fontFamily": "$font-sans",
-                  "fontSize": 12,
-                  "fontWeight": "normal"
                 }
               ]
             }
@@ -11336,49 +11060,6 @@
                   "fontWeight": "500"
                 }
               ]
-            }
-          ]
-        },
-        {
-          "type": "frame",
-          "id": "JUwWq",
-          "name": "Scope Bar",
-          "width": "fill_container",
-          "height": 44,
-          "stroke": "$border",
-          "gap": 8,
-          "padding": [
-            0,
-            20
-          ],
-          "alignItems": "center",
-          "children": [
-            {
-              "type": "text",
-              "id": "x3VCa",
-              "name": "Add filter",
-              "fill": "$ink-secondary",
-              "content": "+ filter",
-              "fontFamily": "$font-sans",
-              "fontSize": 12,
-              "fontWeight": "normal"
-            },
-            {
-              "type": "frame",
-              "id": "M5opx",
-              "name": "Spacer",
-              "width": "fill_container",
-              "height": 1
-            },
-            {
-              "type": "text",
-              "id": "J5YVs",
-              "name": "Result count",
-              "fill": "$ink-muted",
-              "content": "6 boards",
-              "fontFamily": "$font-sans",
-              "fontSize": 12,
-              "fontWeight": "normal"
             }
           ]
         },
@@ -12930,7 +12611,7 @@
               "id": "sDzkZ",
               "layoutPosition": "absolute",
               "x": 1060,
-              "y": 143,
+              "y": 55,
               "name": "Visibility Dropdown",
               "width": 280,
               "fill": "$panel",
@@ -15742,40 +15423,6 @@
           ],
           "alignItems": "center",
           "children": [
-            {
-              "type": "frame",
-              "id": "vUbbU",
-              "name": "Boards Tab",
-              "height": 44,
-              "gap": 6,
-              "padding": [
-                0,
-                2
-              ],
-              "alignItems": "center",
-              "children": [
-                {
-                  "type": "text",
-                  "id": "M9nxM",
-                  "name": "Boards",
-                  "fill": "$ink-secondary",
-                  "content": "Boards",
-                  "fontFamily": "$font-sans",
-                  "fontSize": 14,
-                  "fontWeight": "500"
-                },
-                {
-                  "type": "text",
-                  "id": "LzJLR",
-                  "name": "Boards count",
-                  "fill": "$ink-muted",
-                  "content": "6",
-                  "fontFamily": "$font-sans",
-                  "fontSize": 12,
-                  "fontWeight": "normal"
-                }
-              ]
-            },
             {
               "type": "frame",
               "id": "nSPX2",
