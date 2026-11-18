@@ -8,6 +8,7 @@ import {
   type TranscribeOptions,
 } from "historio-kindle-scribe-notes-parser";
 
+import { getTranscriptionModel } from "@/lib/ai/model-config";
 import { ensureUserBook, findOrCreateBookByAsin } from "@/lib/authz/books";
 import {
   createHighlights,
@@ -15,6 +16,18 @@ import {
   type NewHighlightInput,
 } from "@/lib/authz/highlights";
 import { uploadNoteScan } from "@/lib/storage/buckets";
+
+/**
+ * Options for transcribing handwritten notes. The model is ours to choose
+ * (TRANSCRIPTION_MODEL, default in lib/ai/model-config.ts) rather than the
+ * parser's built-in primary/escalation pair. The parser uses `model` for both
+ * passes, so a threshold of 0 disables the pointless same-model escalation.
+ */
+export function buildTranscribeOptions(
+  onProgress?: TranscribeOptions["onProgress"],
+): TranscribeOptions {
+  return { model: getTranscriptionModel(), confidenceThreshold: 0, onProgress };
+}
 
 /** Parses notebook PDF bytes (the one place steps reach the parser package). */
 export const parseScribeNotebook = parseNotebook;

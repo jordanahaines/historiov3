@@ -9,6 +9,7 @@ import { updateIngestionEvent } from "@/lib/authz/ingestion-events";
 import { downloadReceivedAttachment } from "@/lib/inbound/resend";
 import type { PdfAttachment } from "@/lib/inbound/received-email";
 import {
+  buildTranscribeOptions,
   parseScribeNotebook,
   saveNewHighlights,
 } from "@/lib/ingestion/kindle-scribe";
@@ -93,7 +94,7 @@ export async function importNotebook(input: {
   const summary = await saveNewHighlights(parsed, {
     userId: input.userId,
     ingestionEventId: input.ingestionEventId,
-    transcribeOptions: { gatewayApiKey: process.env.AI_GATEWAY_API_KEY },
+    transcribeOptions: buildTranscribeOptions(),
   });
   return { bookId: summary.bookId, highlightsFound: summary.highlightsFound };
 }

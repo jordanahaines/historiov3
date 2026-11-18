@@ -13,3 +13,6 @@ export const getInsightMatcherModel = () =>
   resolveModel("INSIGHT_MATCHER_MODEL", DEFAULT_MODEL);
 export const getInsightSynthesizerModel = () =>
   resolveModel("INSIGHT_SYNTHESIZER_MODEL", DEFAULT_MODEL);
+
+export const getTranscriptionModel = () =>
+  resolveModel("TRANSCRIPTION_MODEL", DEFAULT_MODEL);
