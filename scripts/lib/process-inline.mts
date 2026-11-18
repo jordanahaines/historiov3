@@ -38,13 +38,21 @@ function withLogging(steps: HighlightSteps, tag: string): HighlightSteps {
 }
 
 /**
+ * Highlights processed at once. Contextualize and research are I/O-bound LLM
+ * calls, so this is high; the merge step still serializes per user (advisory
+ * lock), and each waiting merge holds a DB connection, so keep this below the
+ * pool size in lib/db/index.ts.
+ */
+export const DEFAULT_CONCURRENCY = 12;
+
+/**
  * Runs the per-highlight pipeline in-process with bounded concurrency. In
  * production each highlight is its own parallel workflow run; concurrency here
  * mimics that (and exercises the per-user insight lock).
  */
 export async function processHighlightsInline(
   ids: string[],
-  concurrency = 4,
+  concurrency = DEFAULT_CONCURRENCY,
 ): Promise<void> {
   let next = 0;
   let finished = 0;

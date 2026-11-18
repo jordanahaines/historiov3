@@ -9,13 +9,16 @@ import { parseArgs } from "node:util";
 
 import { listResumableHighlightIds } from "@/lib/authz/highlights";
 
-import { processHighlightsInline } from "./lib/process-inline.mjs";
+import {
+  DEFAULT_CONCURRENCY,
+  processHighlightsInline,
+} from "./lib/process-inline.mjs";
 
 async function main() {
   const { values } = parseArgs({
     options: {
       user: { type: "string" },
-      concurrency: { type: "string", default: "4" },
+      concurrency: { type: "string", default: String(DEFAULT_CONCURRENCY) },
     },
   });
   const ids = await listResumableHighlightIds(values.user);

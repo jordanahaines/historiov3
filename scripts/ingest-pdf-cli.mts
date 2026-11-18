@@ -33,7 +33,10 @@ import {
 } from "@/lib/workflows/steps/ingest-steps";
 
 import { log } from "./lib/log.mjs";
-import { processHighlightsInline } from "./lib/process-inline.mjs";
+import {
+  DEFAULT_CONCURRENCY,
+  processHighlightsInline,
+} from "./lib/process-inline.mjs";
 
 async function main() {
   const { positionals, values } = parseArgs({
@@ -41,7 +44,7 @@ async function main() {
     options: {
       user: { type: "string" },
       "no-process": { type: "boolean", default: false },
-      concurrency: { type: "string", default: "4" },
+      concurrency: { type: "string", default: String(DEFAULT_CONCURRENCY) },
     },
   });
   const file = positionals[0];

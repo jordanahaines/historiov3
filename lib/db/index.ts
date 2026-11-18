@@ -17,10 +17,11 @@ const globalForDb = globalThis as unknown as {
 };
 
 // `prepare: false` is required — Supavisor's transaction mode doesn't support
-// prepared statements. `max` is kept small because every serverless instance
-// opens its own pool against the pooler's connection limit.
+// prepared statements. `max` must exceed the CLI's highlight concurrency
+// (scripts/lib/process-inline.mts): merges waiting on the per-user advisory
+// lock each hold a connection.
 const client =
-  globalForDb.__historioPgClient ?? postgres(url, { prepare: false, max: 5 });
+  globalForDb.__historioPgClient ?? postgres(url, { prepare: false, max: 15 });
 
 if (process.env.NODE_ENV !== "production") {
   globalForDb.__historioPgClient = client;

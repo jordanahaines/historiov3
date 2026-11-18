@@ -48,7 +48,7 @@ Everything for one highlight — insights, links and `status = researched` — c
 ## Local use (no Resend)
 
 ```bash
-pnpm ingest:pdf path/to/notebook.pdf --user <profile-id>   # import + run the pipeline inline (4 highlights at a time; --concurrency N)
+pnpm ingest:pdf path/to/notebook.pdf --user <profile-id>   # import + run the pipeline inline (12 highlights at a time; --concurrency N)
 pnpm ingest:pdf path/to/notebook.pdf --user <profile-id> --no-process
 pnpm pipeline:resume [--user <profile-id>] [--concurrency N]   # re-run pending / contextualized / failed highlights
 ```
