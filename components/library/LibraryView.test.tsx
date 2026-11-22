@@ -103,6 +103,23 @@ describe("LibraryView", () => {
     expect(window.location.search).toContain("hidden=1");
   });
 
+  it("pushes a history entry per section change and restores it on Back", () => {
+    setup();
+    const start = window.history.length;
+    fireEvent.click(screen.getByRole("button", { name: /^Books/ }));
+    expect(window.history.length).toBe(start + 1);
+    fireEvent.change(screen.getByPlaceholderText("Search books"), {
+      target: { value: "spqr" },
+    });
+    // Typing replaces the entry instead of adding one.
+    expect(window.history.length).toBe(start + 1);
+    act(() => {
+      window.history.replaceState(null, "", "/library");
+      window.dispatchEvent(new PopStateEvent("popstate"));
+    });
+    expect(screen.getByPlaceholderText("Search insights")).toBeTruthy();
+  });
+
   it("shows an empty state for no matches and for an empty library", () => {
     setup();
     fireEvent.change(screen.getByPlaceholderText("Search insights"), {

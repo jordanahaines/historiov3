@@ -39,6 +39,23 @@ const PLACEHOLDERS: Record<Lens, string> = {
   insights: "Search insights",
 };
 
+/** Parses the URL, dropping scope ids that aren't in this library (stale or foreign links). */
+function restoreView(search: string, data: LibraryData) {
+  const parsed = parseViewState(search);
+  return {
+    ...parsed,
+    bookId: data.books.some((b) => b.id === parsed.bookId)
+      ? parsed.bookId
+      : null,
+    highlightId: data.highlights.some((h) => h.id === parsed.highlightId)
+      ? parsed.highlightId
+      : null,
+    insightId: data.insights.some((i) => i.id === parsed.insightId)
+      ? parsed.insightId
+      : null,
+  };
+}
+
 function firstWords(text: string, count = 6): string {
   const words = text.trim().split(/\s+/);
   return words.length > count ? `${words.slice(0, count).join(" ")}…` : text;
@@ -55,34 +72,42 @@ export function LibraryView({
   actions,
 }: LibraryViewProps) {
   const [data, setData] = useState(initialData);
-  const [view, setView] = useState(() => {
-    const parsed = parseViewState(initialSearch);
-    // Drop scope ids that aren't in this library (stale or foreign links).
-    return {
-      ...parsed,
-      bookId: initialData.books.some((b) => b.id === parsed.bookId)
-        ? parsed.bookId
-        : null,
-      highlightId: initialData.highlights.some(
-        (h) => h.id === parsed.highlightId,
-      )
-        ? parsed.highlightId
-        : null,
-      insightId: initialData.insights.some((i) => i.id === parsed.insightId)
-        ? parsed.insightId
-        : null,
-    };
-  });
+  const [view, setView] = useState(() =>
+    restoreView(initialSearch, initialData),
+  );
+  const previousView = useRef(view);
   const inFlight = useRef(new Set<string>());
   const [direction, setDirection] = useState<SortDirection>("asc");
   const [errors, setErrors] = useState<Record<string, string>>({});
 
-  // Mirror state to the URL without navigating.
+  // Mirror state to the URL without navigating. Changing section or scope
+  // pushes a history entry, so Back returns to the previous view; typing a
+  // search or toggling hidden replaces the current one.
   useEffect(() => {
+    const previous = previousView.current;
+    previousView.current = view;
     const query = serializeViewState(view);
     const url = `${window.location.pathname}${query ? `?${query}` : ""}`;
-    window.history.replaceState(window.history.state, "", url);
+    if (url === `${window.location.pathname}${window.location.search}`) return;
+    const navigated =
+      previous.lens !== view.lens ||
+      previous.bookId !== view.bookId ||
+      previous.highlightId !== view.highlightId ||
+      previous.insightId !== view.insightId;
+    if (navigated) window.history.pushState(null, "", url);
+    else window.history.replaceState(window.history.state, "", url);
   }, [view]);
+
+  // Back / Forward: restore the view from the URL we landed on.
+  useEffect(() => {
+    function onPopState() {
+      const restored = restoreView(window.location.search, initialData);
+      previousView.current = restored;
+      setView(restored);
+    }
+    window.addEventListener("popstate", onPopState);
+    return () => window.removeEventListener("popstate", onPopState);
+  }, [initialData]);
 
   const { lens, q, showHidden } = view;
   const scopeBook = data.books.find((book) => book.id === view.bookId) ?? null;
