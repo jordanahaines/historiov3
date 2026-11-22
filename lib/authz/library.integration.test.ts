@@ -131,3 +131,18 @@ describe("getNoteImagePathForViewer", () => {
     expect(await getNoteImagePathForViewer(b.userId, a.highlightId)).toBeNull();
   });
 });
+
+describe("getNoteImagePathForViewer and removed books", () => {
+  it("returns null once the book is removed", async () => {
+    const a = await seedUser("N3");
+    await db
+      .update(highlights)
+      .set({ noteImagePath: "u/s.png" })
+      .where(eq(highlights.id, a.highlightId));
+    await db
+      .update(userBooks)
+      .set({ status: "removed" })
+      .where(eq(userBooks.userId, a.userId));
+    expect(await getNoteImagePathForViewer(a.userId, a.highlightId)).toBeNull();
+  });
+});

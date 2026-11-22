@@ -5,7 +5,7 @@
 There is no real sign-in yet. `lib/authz/viewer.ts` is the only place that learns who is looking:
 
 - `getViewer()` returns the user named by `FORCED_VIEWER_ID` (a user id whose profile exists), or `null`.
-- It **always returns `null` when `VERCEL_ENV=production`** (and logs once), so a forced user's data is never shown on production. Preview and local deployments honour it, so setting the variable on Vercel Preview exposes that user's library to anyone with the preview URL.
+- It **fails closed**: the forced user is honoured only on Vercel `preview`/`development` deploys, or locally (no `VERCEL_ENV` and not a production build). On `production`, or any unknown environment, it returns `null` (and logs once). Setting the variable on Vercel Preview exposes that user's library to anyone with the preview URL.
 - `requireViewer()` is for pages and layouts: no viewer redirects to `/sign-in`. Server Actions call `getViewer()` and return an error result instead.
 - Never put a real id in source. Set it in `.env` (see `.env.example`).
 

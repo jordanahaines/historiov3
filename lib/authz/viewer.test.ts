@@ -83,3 +83,21 @@ describe("requireViewer", () => {
     vi.unstubAllEnvs();
   });
 });
+
+describe("resolveViewer fails closed", () => {
+  it.each([
+    ["unset env in a production build", undefined, "production"],
+    ["unknown env", "staging", undefined],
+  ])("refuses for %s", async (_name, vercelEnv, nodeEnv) => {
+    vi.spyOn(console, "error").mockImplementation(() => {});
+    const loadProfile = vi.fn();
+    const viewer = await resolveViewer({
+      forcedId: ID,
+      vercelEnv,
+      nodeEnv,
+      loadProfile,
+    });
+    expect(viewer).toBeNull();
+    expect(loadProfile).not.toHaveBeenCalled();
+  });
+});

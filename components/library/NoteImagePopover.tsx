@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
 
 import type { NoteUrlResult } from "@/components/library/library-actions";
 
@@ -28,25 +28,36 @@ export function NoteImagePopover({
 }: NoteImagePopoverProps) {
   const [state, setState] = useState<State>({ kind: "closed" });
   const open = state.kind !== "closed";
+  const requestId = useRef(0);
 
   async function toggle() {
+    const id = ++requestId.current;
     if (open) {
       setState({ kind: "closed" });
       return;
     }
     setState({ kind: "loading" });
+    let next: State;
     try {
       const result = await getNoteImageUrl(highlightId);
-      setState(
-        result.ok ? { kind: "ready", url: result.url } : { kind: "error" },
-      );
+      next = result.ok ? { kind: "ready", url: result.url } : { kind: "error" };
     } catch {
-      setState({ kind: "error" });
+      next = { kind: "error" };
     }
+    // Ignore a result for a popover that has since been closed or reopened.
+    if (id === requestId.current) setState(next);
   }
 
   return (
-    <span className="relative inline-block align-baseline">
+    <span
+      className="relative inline-block align-baseline"
+      onKeyDown={(event) => {
+        if (event.key === "Escape" && open) {
+          requestId.current++;
+          setState({ kind: "closed" });
+        }
+      }}
+    >
       <button
         type="button"
         aria-label="Show handwritten note"
@@ -71,9 +82,6 @@ export function NoteImagePopover({
         <span
           role="dialog"
           aria-label="Handwritten note"
-          onKeyDown={(event) => {
-            if (event.key === "Escape") setState({ kind: "closed" });
-          }}
           className="border-border-strong bg-panel absolute top-full left-0 z-10 mt-2 block w-72 border p-3 text-sm shadow-sm"
         >
           {state.kind === "loading" ? (

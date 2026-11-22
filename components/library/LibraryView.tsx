@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 
 import { BooksTable } from "@/components/library/BooksTable";
 import { HighlightsTable } from "@/components/library/HighlightsTable";
@@ -55,7 +55,22 @@ export function LibraryView({
   actions,
 }: LibraryViewProps) {
   const [data, setData] = useState(initialData);
-  const [view, setView] = useState(() => parseViewState(initialSearch));
+  const [view, setView] = useState(() => {
+    const parsed = parseViewState(initialSearch);
+    // Drop scope ids that aren't in this library (stale or foreign links).
+    return {
+      ...parsed,
+      bookId: initialData.books.some((b) => b.id === parsed.bookId)
+        ? parsed.bookId
+        : null,
+      highlightId: initialData.highlights.some(
+        (h) => h.id === parsed.highlightId,
+      )
+        ? parsed.highlightId
+        : null,
+    };
+  });
+  const inFlight = useRef(new Set<string>());
   const [direction, setDirection] = useState<SortDirection>("asc");
   const [errors, setErrors] = useState<Record<string, string>>({});
 
@@ -63,7 +78,7 @@ export function LibraryView({
   useEffect(() => {
     const query = serializeViewState(view);
     const url = `${window.location.pathname}${query ? `?${query}` : ""}`;
-    window.history.replaceState(null, "", url);
+    window.history.replaceState(window.history.state, "", url);
   }, [view]);
 
   const { lens, q, showHidden } = view;
@@ -143,6 +158,9 @@ export function LibraryView({
   }
 
   async function changeStatus(id: string, status: InsightStatus) {
+    // One request per insight at a time, so a late failure can't undo a newer change.
+    if (inFlight.current.has(id)) return;
+    inFlight.current.add(id);
     const inverse: InsightStatus = status === "hidden" ? "published" : "hidden";
     setErrors((current) =>
       Object.fromEntries(Object.entries(current).filter(([key]) => key !== id)),
@@ -162,6 +180,7 @@ export function LibraryView({
       setData((current) => applyInsightStatus(current, id, inverse));
       setErrors((current) => ({ ...current, [id]: message }));
     }
+    inFlight.current.delete(id);
   }
 
   function showHighlightInsights(highlight: LibraryHighlight) {

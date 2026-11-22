@@ -1,7 +1,7 @@
 import { and, eq, inArray } from "drizzle-orm";
 
 import { db } from "@/lib/db";
-import { highlights } from "@/lib/db/schema";
+import { highlights, userBooks } from "@/lib/db/schema";
 
 export type Highlight = typeof highlights.$inferSelect;
 
@@ -177,6 +177,14 @@ export async function getNoteImagePathForViewer(
   const [row] = await db
     .select({ path: highlights.noteImagePath })
     .from(highlights)
+    .innerJoin(
+      userBooks,
+      and(
+        eq(userBooks.userId, highlights.userId),
+        eq(userBooks.bookId, highlights.bookId),
+        eq(userBooks.status, "active"),
+      ),
+    )
     .where(and(eq(highlights.id, highlightId), eq(highlights.userId, viewerId)))
     .limit(1);
   return row?.path ?? null;
