@@ -55,3 +55,13 @@ Implemented in `lib/insights/merge-candidates.ts` (details in `docs/ingestion-pi
 - **Scripts that import `lib/db` must exit the process** (the postgres.js pool keeps it alive): `main().then(() => process.exit(process.exitCode ?? 0)).catch((e) => { console.error(e); process.exit(1); })`. Run ad-hoc ones under `timeout`.
 - Env vars: secrets in `.env` (gitignored), documented placeholders in `.env.example`. Never commit keys.
 - Prettier owns formatting. Commit messages: imperative mood, clear subject. CI runs type-check, lint, format:check, test.
+
+<!-- BEGIN:nextjs-agent-rules -->
+
+# This is NOT the Next.js you know
+
+This version has breaking changes — APIs, conventions, and file structure may all differ from your training data. Read the relevant guide in `node_modules/next/dist/docs/` (resolved from this file's directory; in monorepos the `next` package may not be visible from the repo root) before writing any code. Heed deprecation notices.
+
+This block is written and re-added by `next dev` — verify at `node_modules/next/dist/server/lib/generate-agent-files.js`. Removing it from a diff only re-creates the uncommitted change; committing it with your work keeps the tree clean.
+
+<!-- END:nextjs-agent-rules -->

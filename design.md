@@ -4,25 +4,25 @@ Light theme only (no dark mode). Subtle paper background, flat surfaces, hairlin
 
 ## Color
 
-| Token | Hex | Use |
-|---|---|---|
-| `paper` | `#F5F0E6` | Page canvas |
-| `panel` | `#FBF8F2` | Cards, drawers, toolbars |
-| `border` | `#E2DACB` | Hairlines |
-| `border-strong` | `#CFC5B2` | Stronger dividers, input borders |
-| `ink` | `#2A2620` | Primary text, primary buttons |
-| `ink-secondary` | `#6B6358` | Supporting text |
-| `ink-muted` | `#9A917F` | Metadata, placeholders |
-| `wash` | `#EADFC4` | Selected rows, active chips, active lens |
-| `link` | `#2F4A6D` | Focus rings, inline links |
+| Token           | Hex       | Use                                      |
+| --------------- | --------- | ---------------------------------------- |
+| `paper`         | `#F5F0E6` | Page canvas                              |
+| `panel`         | `#FBF8F2` | Cards, drawers, toolbars                 |
+| `border`        | `#E2DACB` | Hairlines                                |
+| `border-strong` | `#CFC5B2` | Stronger dividers, input borders         |
+| `ink`           | `#2A2620` | Primary text, primary buttons            |
+| `ink-secondary` | `#6B6358` | Supporting text                          |
+| `ink-muted`     | `#9A917F` | Metadata, placeholders                   |
+| `wash`          | `#EADFC4` | Selected rows, active chips, active lens |
+| `link`          | `#2F4A6D` | Focus rings, inline links                |
 
 Insight types (map pins, timeline bars; kept separate from UI colors):
 
-| Type | Hex |
-|---|---|
-| Event | `#B4482E` |
-| Person | `#2F5F8F` |
-| Place | `#4F7A4A` |
+| Type    | Hex       |
+| ------- | --------- |
+| Event   | `#B4482E` |
+| Person  | `#2F5F8F` |
+| Place   | `#4F7A4A` |
 | Concept | `#8A6A1F` |
 
 ## Type
@@ -41,7 +41,7 @@ Sharp corners everywhere (`rounded-none`): cards, panels, buttons, inputs, toggl
 - **Insight drawer** docks on the right (400px), overlaying the timeline. When opened, the timeline should pan so the selected bar stays left of the drawer. Contents: type, title (serif), period and area, aliases, description, "From your reading" highlights, then actions (Open in Library = primary, Hide insight = secondary).
 
 - **Library section menu**: Books · Highlights · Insights (Boards are not a Library section; they live only under the top-level Boards nav item) are a text menu under the top nav, not toggle buttons. Active item = ink text, semibold, with the same hand-drawn marker underline as the table header rule (about 3px, slightly uneven); others ink-secondary; muted count after each label.
-- **Library views**: table only, no view switch (Gallery was dropped). The table is minimal, "writing on paper": no fills or cell borders; bold ink header text over a hand-drawn marker rule (a filled path about 4px thick with slightly uneven edges and rounded ends, like a marker run along a ruler: clearly inked, not messy; build it in code as an SVG path or border image, not a CSS border); hairline row dividers. Columns: Title (type-color dot, serif title, subtle highlight and board counts), Description (serif, up to two lines), Period, Theme, Area. Theme is editable: click opens an autocomplete dropdown (type to filter, pick, or create a theme). Area is link-colored with a ↗ that opens the insight on the map. "+ Add insight" sits below the last row. Toolbar and scope bar lose their borders and fills in this view. *Gallery* is a 4-up card grid (area thumbnail with type-colored pin, type and period, serif title, two-line description, theme tag, highlight-count link). The Scope Bar shows "N of M insights" at its right end.
+- **Library views**: table only, no view switch (Gallery was dropped). The table is minimal, "writing on paper": no fills or cell borders; bold ink header text over a hand-drawn marker rule (a filled path about 4px thick with slightly uneven edges and rounded ends, like a marker run along a ruler: clearly inked, not messy; build it in code as an SVG path or border image, not a CSS border); hairline row dividers. Columns: Title (type-color dot, serif title, subtle highlight and board counts), Description (serif, up to two lines), Period, Theme, Area. Theme is editable: click opens an autocomplete dropdown (type to filter, pick, or create a theme). Area is link-colored with a ↗ that opens the insight on the map. "+ Add insight" sits below the last row. Toolbar and scope bar lose their borders and fills in this view. _Gallery_ is a 4-up card grid (area thumbnail with type-colored pin, type and period, serif title, two-line description, theme tag, highlight-count link). The Scope Bar shows "N of M insights" at its right end.
 
 - **Library tables per lens** use the same minimal table. Books: Cover (44×64, from the catalog; placeholder in the mockup), Book (serif title with author below), Themes, Last highlight, and three relation tiles spaced evenly across the last column: a full-size hand-drawn icon (Highlight, Insight, Board) with a link-colored "31 highlights" caption beneath. Highlights and Insights switch the Library section and filter by that book; Boards goes to the top-level Boards page filtered to boards containing that book (shown as a "Book: …" scope chip there). Highlights: Highlight (serif quote; the user's note below it in small dark-grey handwriting, Caveat; an image icon at the end of the quote when a handwritten-note image exists, which opens the image in a popover), Insights (a highlight usually feeds several; show up to two links stacked plus "+N more"), Status (researched, pending, discarded), Captured; no Location column. Boards list (top-level page, E2, draft; no Library section menu): Board (with insight and book counts), Description, Visibility (editable: click opens a Private / Public dropdown with a one-line explanation of each), Updated, "Open board ↗".
 - **Hidden insights**: the Insights scope bar has a "Show hidden (N)" checkbox before the result count. Off by default; hidden insights do not appear. On: hidden insights appear in place, muted (grey text, faded type dot), with a small "Hidden" tag and a link-colored "Restore" (rotate icon) on a second line under the title. Restore returns the insight to published; hiding happens from the insight drawer.
@@ -54,3 +54,8 @@ Sharp corners everywhere (`rounded-none`): cards, panels, buttons, inputs, toggl
 - One map, one timeline. If a feature doesn't help see reading as places and periods, it waits.
 - Primary action is ink-filled; at most one per view.
 - Library filtering is client state (see CLAUDE.md).
+
+- **E1 Library as built (v3 scope)**: the Theme column, the Gallery view, the Boards relation tile and "+ Add insight" are not built (later epics); Books shows two relation tiles (Highlights, Insights). Insights columns: Title, Description, Period, Area (plain text, no ↗ until the map exists). **Hide**: a row action on published insights, revealed on hover/focus (text button under the title); hidden insights show only when "Show hidden (N)" is checked, muted with a "Hidden" tag and "↻ Restore". The change is optimistic; on failure it rolls back and shows an inline error under the row. **Empty states**: "No books yet. Send a notebook from your Kindle Scribe." for an empty library; "Nothing matches." when search/scope leave nothing. **Note image popover**: loading, ready (image with "Handwritten note · page N") and error ("Couldn't load the note image.") states. **Sign-in** is a placeholder page ("Sign-in isn't available yet.") until real auth ships; only Library is a live nav link.
+- **Insights table update**: an Actions column (last) holds a clickable highlight-count badge (opens Highlights scoped to that insight, shown as a chip) and the Hide / Restore eye icon (Hide shows on row hover or focus). "Show hidden" is a transparent switch. Search fields carry a magnifier icon, table headers are sticky on scroll, and every clickable element shows a pointer cursor.
+- **Sticky mast**: the top nav is sticky on every page. In the Library the section menu and one row below it (search at the left, scope chips, Show hidden switch and result count at the right) stick under the nav, and the table header sticks under that.
+- **Period display**: dates read `m/d/yyyy` (or `m/yyyy`, `yyyy` by stored precision), with ` BC` appended for years before 1 CE and no CE suffix. A period with an end shows it on a second line in small muted text: "to <date>". The highlight-count badge has a tooltip ("3 highlights").

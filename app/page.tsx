@@ -1,10 +1,9 @@
-export default function HomePage() {
-  return (
-    <main className="p-8">
-      <h1 className="text-2xl font-semibold">Historio</h1>
-      <p className="mt-2 text-neutral-600">
-        Your highlights, on one map and one timeline.
-      </p>
-    </main>
-  );
+import { redirect } from "next/navigation";
+
+import { getViewer } from "@/lib/authz/viewer";
+
+/** The marketing landing page is a later story; for now `/` just routes. */
+export default async function HomePage() {
+  const viewer = await getViewer();
+  redirect(viewer ? "/library" : "/sign-in");
 }

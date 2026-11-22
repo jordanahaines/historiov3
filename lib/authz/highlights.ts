@@ -1,7 +1,7 @@
 import { and, eq, inArray } from "drizzle-orm";
 
 import { db } from "@/lib/db";
-import { highlights } from "@/lib/db/schema";
+import { highlights, userBooks } from "@/lib/db/schema";
 
 export type Highlight = typeof highlights.$inferSelect;
 
@@ -163,4 +163,29 @@ export async function countHighlightsForEvent(
     .from(highlights)
     .where(eq(highlights.ingestionEventId, ingestionEventId));
   return rows.length;
+}
+
+/**
+ * The storage path of a handwritten-note scan, but only if the highlight
+ * belongs to the viewer. This is the guard for signing scan URLs: storage is
+ * accessed with the secret key, so ownership must be checked here.
+ */
+export async function getNoteImagePathForViewer(
+  viewerId: string,
+  highlightId: string,
+): Promise<string | null> {
+  const [row] = await db
+    .select({ path: highlights.noteImagePath })
+    .from(highlights)
+    .innerJoin(
+      userBooks,
+      and(
+        eq(userBooks.userId, highlights.userId),
+        eq(userBooks.bookId, highlights.bookId),
+        eq(userBooks.status, "active"),
+      ),
+    )
+    .where(and(eq(highlights.id, highlightId), eq(highlights.userId, viewerId)))
+    .limit(1);
+  return row?.path ?? null;
 }
