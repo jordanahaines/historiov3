@@ -68,6 +68,9 @@ export function LibraryView({
       )
         ? parsed.highlightId
         : null,
+      insightId: initialData.insights.some((i) => i.id === parsed.insightId)
+        ? parsed.insightId
+        : null,
     };
   });
   const inFlight = useRef(new Set<string>());
@@ -86,12 +89,16 @@ export function LibraryView({
   const scopeHighlight =
     data.highlights.find((highlight) => highlight.id === view.highlightId) ??
     null;
+  const scopeInsight =
+    data.insights.find((insight) => insight.id === view.insightId) ?? null;
   const scope = useMemo(
     () => ({
       bookId: scopeBook?.id,
       highlightId: lens === "insights" ? scopeHighlight?.id : undefined,
+      insightHighlightIds:
+        lens === "highlights" ? scopeInsight?.highlightIds : undefined,
     }),
-    [scopeBook, scopeHighlight, lens],
+    [scopeBook, scopeHighlight, scopeInsight, lens],
   );
 
   const counts = sectionCounts(data);
@@ -123,6 +130,10 @@ export function LibraryView({
     });
   }
 
+  if (lens === "highlights" && scopeInsight) {
+    chips.push({ key: "insight", label: scopeInsight.title });
+  }
+
   const shownCount =
     lens === "books"
       ? books.length
@@ -146,6 +157,7 @@ export function LibraryView({
       lens: next,
       bookId: null,
       highlightId: null,
+      insightId: null,
     }));
   }
 
@@ -153,7 +165,9 @@ export function LibraryView({
     setView((current) =>
       key === "book"
         ? { ...current, bookId: null }
-        : { ...current, highlightId: null },
+        : key === "insight"
+          ? { ...current, insightId: null }
+          : { ...current, highlightId: null },
     );
   }
 
@@ -189,6 +203,17 @@ export function LibraryView({
       lens: "insights",
       bookId: null,
       highlightId: highlight.id,
+      insightId: null,
+    }));
+  }
+
+  function showInsightHighlights(insightId: string) {
+    setView((current) => ({
+      ...current,
+      lens: "highlights",
+      bookId: null,
+      highlightId: null,
+      insightId,
     }));
   }
 
@@ -213,6 +238,7 @@ export function LibraryView({
               ...current,
               bookId: null,
               highlightId: null,
+              insightId: null,
             }))
           }
           hidden={
@@ -244,6 +270,7 @@ export function LibraryView({
                 lens: "highlights",
                 bookId,
                 highlightId: null,
+                insightId: null,
               }))
             }
             onShowInsights={(bookId) =>
@@ -252,6 +279,7 @@ export function LibraryView({
                 lens: "insights",
                 bookId,
                 highlightId: null,
+                insightId: null,
               }))
             }
           />
@@ -269,6 +297,7 @@ export function LibraryView({
             onToggleSort={() =>
               setDirection((current) => (current === "asc" ? "desc" : "asc"))
             }
+            onShowHighlights={showInsightHighlights}
             onHide={(id) => void changeStatus(id, "hidden")}
             onRestore={(id) => void changeStatus(id, "published")}
           />

@@ -13,7 +13,7 @@ type TableHeaderProps = { columns: TableColumn[] };
 /** Bold ink header text over the hand-drawn marker rule. */
 export function TableHeader({ columns }: TableHeaderProps) {
   return (
-    <thead>
+    <thead className="bg-paper sticky top-0 z-10">
       <tr>
         {columns.map((column) => (
           <th

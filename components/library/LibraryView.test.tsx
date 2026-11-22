@@ -81,6 +81,28 @@ describe("LibraryView", () => {
     expect(window.location.search).not.toContain("book=");
   });
 
+  it("an insight's highlight badge opens Highlights scoped to it", () => {
+    setup();
+    fireEvent.click(
+      screen.getByRole("button", {
+        name: "Show highlights for Fall of Constantinople: 1",
+      }),
+    );
+    expect(screen.getByPlaceholderText("Search highlights")).toBeTruthy();
+    expect(screen.queryByText(/Ides of March/)).toBeNull();
+    expect(screen.getByText(/Constantinople fell/)).toBeTruthy();
+    expect(window.location.search).toContain("insight=i-fall");
+  });
+
+  it("toggles hidden insights with a switch", () => {
+    setup();
+    const toggle = screen.getByRole("switch");
+    expect(toggle.getAttribute("aria-checked")).toBe("false");
+    fireEvent.click(toggle);
+    expect(toggle.getAttribute("aria-checked")).toBe("true");
+    expect(window.location.search).toContain("hidden=1");
+  });
+
   it("shows an empty state for no matches and for an empty library", () => {
     setup();
     fireEvent.change(screen.getByPlaceholderText("Search insights"), {

@@ -50,15 +50,23 @@ export function ScopeBar({
       ) : null}
       <span className="ml-auto flex items-center gap-4">
         {hidden ? (
-          <label className="text-ink-secondary flex items-center gap-1.5">
-            <input
-              type="checkbox"
-              checked={hidden.checked}
-              onChange={(event) => hidden.onChange(event.target.checked)}
-              className="accent-ink size-3.5"
-            />
+          <button
+            type="button"
+            role="switch"
+            aria-checked={hidden.checked}
+            onClick={() => hidden.onChange(!hidden.checked)}
+            className="text-ink-secondary focus-visible:outline-link flex items-center gap-2 bg-transparent focus-visible:outline-2"
+          >
+            <span
+              aria-hidden="true"
+              className="border-ink relative inline-block h-4 w-7 border bg-transparent"
+            >
+              <span
+                className={`bg-ink absolute top-0.5 size-2.5 transition-all ${hidden.checked ? "left-4" : "left-0.5 opacity-40"}`}
+              />
+            </span>
             Show hidden ({hidden.count})
-          </label>
+          </button>
         ) : null}
         <span className="text-ink-muted">{resultText}</span>
       </span>

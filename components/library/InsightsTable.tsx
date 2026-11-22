@@ -8,6 +8,7 @@ type InsightsTableProps = {
   direction: SortDirection;
   errors: Record<string, string>;
   onToggleSort: () => void;
+  onShowHighlights: (insightId: string) => void;
   onHide: (id: string) => void;
   onRestore: (id: string) => void;
 };
@@ -17,6 +18,7 @@ export function InsightsTable({
   direction,
   errors,
   onToggleSort,
+  onShowHighlights,
   onHide,
   onRestore,
 }: InsightsTableProps) {
@@ -24,15 +26,16 @@ export function InsightsTable({
     <table className="w-full table-fixed border-collapse">
       <TableHeader
         columns={[
-          { key: "title", label: "Title", className: "w-[28%]" },
-          { key: "description", label: "Description", className: "w-[38%]" },
+          { key: "title", label: "Title", className: "w-[26%]" },
+          { key: "description", label: "Description", className: "w-[34%]" },
           {
             key: "period",
             label: "Period",
-            className: "w-[16%]",
+            className: "w-[14%]",
             sort: { direction, onToggle: onToggleSort },
           },
-          { key: "area", label: "Area" },
+          { key: "area", label: "Area", className: "w-[8%]" },
+          { key: "actions", label: "Actions", className: "w-[10%]" },
         ]}
       />
       <tbody>
@@ -41,6 +44,7 @@ export function InsightsTable({
             key={insight.id}
             insight={insight}
             error={errors[insight.id]}
+            onShowHighlights={onShowHighlights}
             onHide={onHide}
             onRestore={onRestore}
           />

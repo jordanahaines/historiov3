@@ -54,4 +54,9 @@ export type LibraryData = {
 };
 
 /** What the Library is scoped to, set only by relation links. */
-export type Scope = { bookId?: string; highlightId?: string };
+export type Scope = {
+  bookId?: string;
+  highlightId?: string;
+  /** Show only these highlights (the ones behind one insight). */
+  insightHighlightIds?: string[];
+};

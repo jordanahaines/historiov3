@@ -17,6 +17,6 @@ Real Supabase Auth replaces the body of `resolveViewer`; call sites do not chang
 
 ## Library
 
-`getLibrary(viewerId)` (`lib/authz/library.ts`) loads books, highlights and insights once; `LibraryView` filters, scopes and sorts them in the browser, and mirrors lens/search/scope/hidden to the URL with `history.replaceState` (`lens`, `q`, `book`, `highlight`, `hidden=1`). Removed books (`user_books.status='removed'`) are excluded everywhere.
+`getLibrary(viewerId)` (`lib/authz/library.ts`) loads books, highlights and insights once; `LibraryView` filters, scopes and sorts them in the browser, and mirrors lens/search/scope/hidden to the URL with `history.replaceState` (`lens`, `q`, `book`, `highlight`, `insight`, `hidden=1`). Removed books (`user_books.status='removed'`) are excluded everywhere.
 
 Mutations are Server Actions in `app/(app)/library/actions.ts`: `hideInsightAction` / `restoreInsightAction` (scoped to the viewer's own insights) and `getNoteImageUrlAction` (signed URL, 5 minutes, only for the owner's highlight, requested when the popover opens).

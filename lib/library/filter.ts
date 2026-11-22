@@ -41,6 +41,11 @@ export function filterHighlights(
 ): LibraryHighlight[] {
   return highlights
     .filter((highlight) => !scope.bookId || highlight.bookId === scope.bookId)
+    .filter(
+      (highlight) =>
+        !scope.insightHighlightIds ||
+        scope.insightHighlightIds.includes(highlight.id),
+    )
     .filter((highlight) =>
       matches(query, [
         highlight.text,

@@ -1,4 +1,5 @@
 import { EntityIcon } from "@/components/library/EntityIcon";
+import { VisibilityIcon } from "@/components/library/VisibilityIcon";
 import { TypeDot } from "@/components/library/TypeDot";
 import { formatPeriod } from "@/lib/insights/period-format";
 import type { LibraryInsight } from "@/lib/library/types";
@@ -6,6 +7,7 @@ import type { LibraryInsight } from "@/lib/library/types";
 type InsightRowProps = {
   insight: LibraryInsight;
   error?: string;
+  onShowHighlights: (insightId: string) => void;
   onHide: (id: string) => void;
   onRestore: (id: string) => void;
 };
@@ -13,6 +15,7 @@ type InsightRowProps = {
 export function InsightRow({
   insight,
   error,
+  onShowHighlights,
   onHide,
   onRestore,
 }: InsightRowProps) {
@@ -25,39 +28,14 @@ export function InsightRow({
         <div className="flex gap-2">
           <TypeDot type={insight.type} faded={hidden} />
           <div>
-            <div className="flex items-center gap-2">
-              <span className="font-serif text-base">{insight.title}</span>
-              <span className="text-ink-muted inline-flex items-center gap-1 text-xs">
-                <EntityIcon kind="highlight" size="small" />
-                {insight.highlightCount}
-              </span>
-            </div>
-            <div className="mt-1 flex items-center gap-2 text-xs">
-              {hidden ? (
-                <>
-                  <span className="bg-wash text-ink-secondary px-1.5 py-0.5">
-                    Hidden
-                  </span>
-                  <button
-                    type="button"
-                    aria-label={`Restore ${insight.title}`}
-                    onClick={() => onRestore(insight.id)}
-                    className="text-link focus-visible:outline-link hover:underline focus-visible:outline-2"
-                  >
-                    ↻ Restore
-                  </button>
-                </>
-              ) : (
-                <button
-                  type="button"
-                  aria-label={`Hide ${insight.title}`}
-                  onClick={() => onHide(insight.id)}
-                  className="text-ink-secondary focus-visible:outline-link opacity-0 group-focus-within:opacity-100 group-hover:opacity-100 hover:underline focus-visible:opacity-100 focus-visible:outline-2"
-                >
-                  Hide
-                </button>
-              )}
-            </div>
+            <span className="font-serif text-base">{insight.title}</span>
+            {hidden ? (
+              <div className="mt-1">
+                <span className="bg-wash text-ink-secondary px-1.5 py-0.5 text-xs">
+                  Hidden
+                </span>
+              </div>
+            ) : null}
             {error ? (
               <p role="alert" className="text-type-event mt-1 text-xs">
                 {error}
@@ -74,7 +52,42 @@ export function InsightRow({
       <td className="py-3 pr-4 text-sm whitespace-nowrap">
         {formatPeriod(insight.period)}
       </td>
-      <td className="py-3 text-sm">{insight.locationName ?? "–"}</td>
+      <td className="py-3 pr-4 text-sm">{insight.locationName ?? "–"}</td>
+      <td className="py-3">
+        <div className="flex items-center gap-3">
+          <button
+            type="button"
+            aria-label={`Show highlights for ${insight.title}: ${insight.highlightCount}`}
+            title="Show highlights"
+            onClick={() => onShowHighlights(insight.id)}
+            className="bg-wash text-ink-secondary hover:text-ink focus-visible:outline-link inline-flex items-center gap-1 px-1.5 py-0.5 text-xs focus-visible:outline-2"
+          >
+            <EntityIcon kind="highlight" size="small" />
+            {insight.highlightCount}
+          </button>
+          {hidden ? (
+            <button
+              type="button"
+              aria-label={`Restore ${insight.title}`}
+              title="Restore"
+              onClick={() => onRestore(insight.id)}
+              className="text-link focus-visible:outline-link focus-visible:outline-2"
+            >
+              <VisibilityIcon visible />
+            </button>
+          ) : (
+            <button
+              type="button"
+              aria-label={`Hide ${insight.title}`}
+              title="Hide"
+              onClick={() => onHide(insight.id)}
+              className="text-ink-secondary hover:text-ink focus-visible:outline-link opacity-0 group-focus-within:opacity-100 group-hover:opacity-100 focus-visible:opacity-100 focus-visible:outline-2"
+            >
+              <VisibilityIcon visible={false} />
+            </button>
+          )}
+        </div>
+      </td>
     </tr>
   );
 }

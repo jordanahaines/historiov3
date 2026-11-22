@@ -5,6 +5,8 @@ export type ViewState = {
   q: string;
   bookId: string | null;
   highlightId: string | null;
+  /** Highlights lens only: the insight whose highlights are shown. */
+  insightId: string | null;
   showHidden: boolean;
 };
 
@@ -17,10 +19,11 @@ export const DEFAULT_VIEW_STATE: ViewState = {
   q: "",
   bookId: null,
   highlightId: null,
+  insightId: null,
   showHidden: false,
 };
 
-/** Restores a view from `?lens=&q=&book=&highlight=&hidden=`. Unknown input is ignored. */
+/** Restores a view from `?lens=&q=&book=&highlight=&insight=&hidden=`. Unknown input is ignored. */
 export function parseViewState(search: string): ViewState {
   const params = new URLSearchParams(search);
   const lens = params.get("lens");
@@ -29,6 +32,7 @@ export function parseViewState(search: string): ViewState {
     q: params.get("q") ?? "",
     bookId: params.get("book") || null,
     highlightId: params.get("highlight") || null,
+    insightId: params.get("insight") || null,
     showHidden: params.get("hidden") === "1",
   };
 }
@@ -40,6 +44,7 @@ export function serializeViewState(state: ViewState): string {
   if (state.q) params.set("q", state.q);
   if (state.bookId) params.set("book", state.bookId);
   if (state.highlightId) params.set("highlight", state.highlightId);
+  if (state.insightId) params.set("insight", state.insightId);
   if (state.showHidden) params.set("hidden", "1");
   return params.toString();
 }

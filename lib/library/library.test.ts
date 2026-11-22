@@ -137,9 +137,19 @@ describe("view state in the URL", () => {
       q: "silk road",
       bookId: "book-silk",
       highlightId: null,
+      insightId: "i-fall",
       showHidden: true,
     };
     expect(parseViewState(serializeViewState(state))).toEqual(state);
+  });
+
+  it("scopes highlights to one insight's highlights", () => {
+    const { highlights } = makeLibrary();
+    expect(
+      filterHighlights(highlights, "", { insightHighlightIds: ["h-1"] }).map(
+        (h) => h.id,
+      ),
+    ).toEqual(["h-1"]);
   });
 
   it("omits defaults and ignores unknown lenses", () => {
@@ -149,6 +159,7 @@ describe("view state in the URL", () => {
         q: "",
         bookId: null,
         highlightId: null,
+        insightId: null,
         showHidden: false,
       }),
     ).toBe("");

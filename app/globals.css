@@ -34,3 +34,10 @@ body {
   color: var(--color-ink);
   font-family: var(--font-sans);
 }
+
+/* Tailwind's preflight resets buttons to the default cursor; clickable things should show a pointer. */
+button:not(:disabled),
+[role="button"]:not([aria-disabled="true"]),
+summary {
+  cursor: pointer;
+}
