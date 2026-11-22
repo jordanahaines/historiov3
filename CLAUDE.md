@@ -18,6 +18,12 @@ notion_database_url: https://app.notion.com/p/40d2dd9d3fb7805ca0ebdc145ab228de
 
 Issues live in the **Historio Product Roadmap** Notion database (shared with the v1 repo — v3 items are distinguished by their title/epic, e.g. an "E1" parent). The `em-*` skills read this section. Access via the Notion MCP tools; always fetch the data source first to get the current schema. Do not create GitHub Issues; PRs live on GitHub (`jordanahaines/historiov3`). Status/Priority/Effort/Category properties and workflow are the same as the v1 repo: `Backlog` = stub, `Planned` = specified, `In progress` = building (PR URL at top of the page body), `Completed` = merged.
 
+## Risky actions
+
+- **Migrations:** fine to generate and apply (`pnpm db:generate`, `pnpm db:migrate`) without asking, including against the shared Supabase project. Everything stays in the `v3` schema.
+- **LLM-spending runs: confirm first.** Anything that calls models in bulk or against real data — `pnpm ingest:pdf`, `pnpm pipeline:resume`, scripts that loop over highlights, large backfills. Say roughly what it will cost (highlight count × stages) and wait for a yes. A single call in a unit test or a one-off prompt check doesn't need one.
+- **Destroying data: confirm first**, even in staging or on rows that look like test data. That covers `DELETE`/`TRUNCATE`/`DROP`, removing Storage objects, resetting or re-importing a user's data, and rolling back a migration that drops columns. Look at what the target contains before asking.
+
 ## Tech Stack
 
 Next.js (App Router) · TypeScript strict · Drizzle ORM · Supabase (Postgres + Auth + Storage) · HeroUI · Tailwind CSS (SCSS only where Tailwind can't) · Vercel · Vercel AI SDK via AI Gateway · MapLibre GL JS + Stadia Maps · vis-timeline (thin custom React wrapper) · Resend (inbound email) · Vitest + React Testing Library · pnpm.
