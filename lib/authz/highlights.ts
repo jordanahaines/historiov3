@@ -164,3 +164,20 @@ export async function countHighlightsForEvent(
     .where(eq(highlights.ingestionEventId, ingestionEventId));
   return rows.length;
 }
+
+/**
+ * The storage path of a handwritten-note scan, but only if the highlight
+ * belongs to the viewer. This is the guard for signing scan URLs: storage is
+ * accessed with the secret key, so ownership must be checked here.
+ */
+export async function getNoteImagePathForViewer(
+  viewerId: string,
+  highlightId: string,
+): Promise<string | null> {
+  const [row] = await db
+    .select({ path: highlights.noteImagePath })
+    .from(highlights)
+    .where(and(eq(highlights.id, highlightId), eq(highlights.userId, viewerId)))
+    .limit(1);
+  return row?.path ?? null;
+}

@@ -31,3 +31,17 @@ export async function getProfileById(id: string): Promise<ProfileRef | null> {
     .limit(1);
   return profile ?? null;
 }
+
+export type ViewerProfile = { id: string; displayName: string };
+
+/** The profile fields the app shell needs for the signed-in viewer. */
+export async function getViewerProfile(
+  id: string,
+): Promise<ViewerProfile | null> {
+  const [profile] = await db
+    .select({ id: profiles.id, displayName: profiles.displayName })
+    .from(profiles)
+    .where(eq(profiles.id, id))
+    .limit(1);
+  return profile ?? null;
+}

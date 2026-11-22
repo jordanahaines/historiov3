@@ -78,3 +78,20 @@ export function uploadNoteScan(
     "image/png",
   );
 }
+
+/** A short-lived URL for a private note scan. The caller must have checked ownership. */
+export async function createNoteScanSignedUrl(
+  path: string,
+  expiresInSeconds = 300,
+): Promise<string> {
+  const { data, error } = await storageClient()
+    .storage.from(NOTE_SCANS_BUCKET)
+    .createSignedUrl(path, expiresInSeconds);
+  if (error || !data) {
+    throw new Error(
+      `Failed to sign ${NOTE_SCANS_BUCKET}/${path}: ${error?.message ?? "no data"}`,
+      { cause: error },
+    );
+  }
+  return data.signedUrl;
+}

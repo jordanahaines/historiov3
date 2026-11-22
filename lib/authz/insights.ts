@@ -274,3 +274,20 @@ export async function getHighlightOwner(
     .limit(1);
   return row?.userId ?? null;
 }
+
+/**
+ * Hides or restores one of the viewer's own insights. Returns false (and
+ * writes nothing) when the insight doesn't exist or belongs to someone else.
+ */
+export async function setInsightStatusForViewer(
+  viewerId: string,
+  insightId: string,
+  status: Insight["status"],
+): Promise<boolean> {
+  const updated = await db
+    .update(insights)
+    .set({ status })
+    .where(and(eq(insights.id, insightId), eq(insights.userId, viewerId)))
+    .returning({ id: insights.id });
+  return updated.length > 0;
+}

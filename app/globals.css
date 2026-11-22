@@ -1,13 +1,36 @@
 @import "tailwindcss";
 @import "@heroui/styles";
 
+/* Design tokens, defined once. See design.md. Light theme only. */
+@theme {
+  --color-paper: #f5f0e6;
+  --color-panel: #fbf8f2;
+  --color-border: #e2dacb;
+  --color-border-strong: #cfc5b2;
+  --color-ink: #2a2620;
+  --color-ink-secondary: #6b6358;
+  --color-ink-muted: #9a917f;
+  --color-wash: #eadfc4;
+  --color-link: #2f4a6d;
+
+  --color-type-event: #b4482e;
+  --color-type-person: #2f5f8f;
+  --color-type-place: #4f7a4a;
+  --color-type-concept: #8a6a1f;
+
+  --color-note: #4a4742;
+
+  --font-serif: var(--font-newsreader), Georgia, serif;
+  --font-sans: var(--font-inter), system-ui, sans-serif;
+  --font-hand: var(--font-caveat), cursive;
+}
+
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
   color-scheme: light;
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
+  background: var(--color-paper);
+  color: var(--color-ink);
+  font-family: var(--font-sans);
 }
