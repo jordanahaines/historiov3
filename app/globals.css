@@ -1,6 +1,11 @@
 @import "tailwindcss";
 @import "@heroui/styles";
 
+/* Height of the sticky top nav; sticky page content offsets from it. */
+:root {
+  --nav-h: 3.5rem;
+}
+
 /* Design tokens, defined once. See design.md. Light theme only. */
 @theme {
   --color-paper: #f5f0e6;

@@ -76,6 +76,18 @@ export function LibraryView({
     restoreView(initialSearch, initialData),
   );
   const previousView = useRef(view);
+  // The sticky mast's height, so the table header can stick just below it.
+  const mastRef = useRef<HTMLDivElement>(null);
+  const [mastHeight, setMastHeight] = useState(0);
+  useEffect(() => {
+    const mast = mastRef.current;
+    if (!mast || typeof ResizeObserver === "undefined") return;
+    const observer = new ResizeObserver(() =>
+      setMastHeight(mast.getBoundingClientRect().height),
+    );
+    observer.observe(mast);
+    return () => observer.disconnect();
+  }, []);
   const inFlight = useRef(new Set<string>());
   const [direction, setDirection] = useState<SortDirection>("asc");
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -245,39 +257,52 @@ export function LibraryView({
   const emptyLibrary = data.books.length === 0;
 
   return (
-    <div className="mx-auto w-full max-w-[1400px] px-6 py-6">
-      <SectionMenu lens={lens} counts={counts} onSelect={selectLens} />
-      <div className="mt-4">
-        <SearchField
-          value={q}
-          placeholder={PLACEHOLDERS[lens]}
-          onChange={(value) => setView((current) => ({ ...current, q: value }))}
-        />
-      </div>
-      <div className="mt-2">
-        <ScopeBar
-          chips={chips}
-          onRemoveChip={removeChip}
-          onClear={() =>
-            setView((current) => ({
-              ...current,
-              bookId: null,
-              highlightId: null,
-              insightId: null,
-            }))
-          }
-          hidden={
-            lens === "insights"
-              ? {
-                  count: hidden,
-                  checked: showHidden,
-                  onChange: (next) =>
-                    setView((current) => ({ ...current, showHidden: next })),
-                }
-              : undefined
-          }
-          resultText={resultText}
-        />
+    <div
+      className="mx-auto w-full max-w-[1400px] px-6 pb-6"
+      style={{ "--mast-h": `${mastHeight}px` } as React.CSSProperties}
+    >
+      <div
+        ref={mastRef}
+        className="bg-paper sticky top-[var(--nav-h)] z-20 -mx-6 px-6 pt-5 pb-1"
+      >
+        <SectionMenu lens={lens} counts={counts} onSelect={selectLens} />
+        <div className="mt-3 flex flex-wrap items-center gap-x-6 gap-y-1">
+          <SearchField
+            value={q}
+            placeholder={PLACEHOLDERS[lens]}
+            onChange={(value) =>
+              setView((current) => ({ ...current, q: value }))
+            }
+          />
+          <div className="min-w-0 flex-1">
+            <ScopeBar
+              chips={chips}
+              onRemoveChip={removeChip}
+              onClear={() =>
+                setView((current) => ({
+                  ...current,
+                  bookId: null,
+                  highlightId: null,
+                  insightId: null,
+                }))
+              }
+              hidden={
+                lens === "insights"
+                  ? {
+                      count: hidden,
+                      checked: showHidden,
+                      onChange: (next) =>
+                        setView((current) => ({
+                          ...current,
+                          showHidden: next,
+                        })),
+                    }
+                  : undefined
+              }
+              resultText={resultText}
+            />
+          </div>
+        </div>
       </div>
       <div className="mt-2">
         {emptyLibrary ? (

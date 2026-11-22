@@ -16,7 +16,7 @@ export function TopNav({ initial }: TopNavProps) {
   const libraryActive = pathname.startsWith("/library");
 
   return (
-    <header className="border-border bg-panel flex items-center justify-between border-b px-6 py-3">
+    <header className="border-border bg-panel sticky top-0 z-30 flex h-[var(--nav-h)] items-center justify-between border-b px-6">
       <div className="flex items-center gap-6">
         <span className="font-serif text-2xl font-semibold">Historio</span>
         <nav aria-label="Main" className="flex items-center gap-1">
