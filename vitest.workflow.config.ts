@@ -27,7 +27,7 @@ export default defineConfig({
     // The workflow bundle loads the real step modules (and so lib/db), which
     // requires a URL at import time. These tests never query: postgres.js
     // connects lazily.
-    env: { DATABASE_URL: "postgres://unused:unused@localhost:6543/unused" },
+    env: { POSTGRES_URL: "postgres://unused:unused@localhost:6543/unused" },
     testTimeout: 60_000,
   },
   resolve: {

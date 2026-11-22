@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
 
-// The default steps import the DB client, which needs DATABASE_URL at import
+// The default steps import the DB client, which needs POSTGRES_URL at import
 // time; these tests inject fake steps and never touch it.
 vi.mock("@/lib/db", () => ({ db: {} }));
 

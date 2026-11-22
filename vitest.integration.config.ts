@@ -3,7 +3,7 @@ import { defineConfig } from "vitest/config";
 
 // Integration tests run against the real Supabase `v3` schema. Each test
 // creates its own auth user (the profile trigger makes the profile) and
-// deletes it afterwards. Needs DATABASE_URL (loaded from .env by the tests).
+// deletes it afterwards. Needs POSTGRES_URL (loaded from .env by the tests).
 export default defineConfig({
   test: {
     environment: "node",

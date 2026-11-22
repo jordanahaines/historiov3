@@ -10,5 +10,5 @@ export default defineConfig({
   dialect: "postgresql",
   schemaFilter: ["v3"],
   migrations: { schema: "v3", table: "__drizzle_migrations" },
-  dbCredentials: { url: process.env.DATABASE_URL_DIRECT! },
+  dbCredentials: { url: process.env.POSTGRES_URL_NON_POOLING! },
 });

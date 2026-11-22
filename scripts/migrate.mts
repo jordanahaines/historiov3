@@ -9,8 +9,8 @@ import { migrate } from "drizzle-orm/postgres-js/migrator";
 import postgres from "postgres";
 
 async function main() {
-  const url = process.env.DATABASE_URL_DIRECT;
-  if (!url) throw new Error("DATABASE_URL_DIRECT is not set");
+  const url = process.env.POSTGRES_URL_NON_POOLING;
+  if (!url) throw new Error("POSTGRES_URL_NON_POOLING is not set");
   const client = postgres(url, { prepare: false, max: 1, onnotice: () => {} });
   try {
     await migrate(drizzle(client), {

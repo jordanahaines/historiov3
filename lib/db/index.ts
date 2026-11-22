@@ -3,10 +3,10 @@ import postgres from "postgres";
 
 import * as schema from "./schema";
 
-const url = process.env.DATABASE_URL;
+const url = process.env.POSTGRES_URL;
 if (!url) {
   throw new Error(
-    "DATABASE_URL is not set. It must be Supabase's transaction-mode pooler (port 6543).",
+    "POSTGRES_URL is not set. It must be Supabase's transaction-mode pooler (port 6543).",
   );
 }
 
