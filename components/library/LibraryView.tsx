@@ -211,6 +211,9 @@ export function LibraryView({
   async function changeStatus(id: string, status: InsightStatus) {
     // One request per insight at a time, so a late failure can't undo a newer change.
     if (inFlight.current.has(id)) return;
+    // Already in the requested state (stale click): nothing to change or roll back.
+    if (data.insights.find((insight) => insight.id === id)?.status === status)
+      return;
     inFlight.current.add(id);
     const inverse: InsightStatus = status === "hidden" ? "published" : "hidden";
     setErrors((current) =>
@@ -254,7 +257,10 @@ export function LibraryView({
     }));
   }
 
-  const emptyLibrary = data.books.length === 0;
+  const emptyLibrary =
+    data.books.length === 0 &&
+    data.highlights.length === 0 &&
+    data.insights.length === 0;
 
   return (
     <div

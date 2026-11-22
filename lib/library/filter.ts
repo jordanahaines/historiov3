@@ -88,7 +88,10 @@ export function filterInsights(
     )
     .sort(
       (a, b) =>
-        sign * (periodValues(a.period).start - periodValues(b.period).start),
+        sign * (periodValues(a.period).start - periodValues(b.period).start) ||
+        // Ties (same start) keep a stable order across loads and toggles.
+        a.title.localeCompare(b.title) ||
+        a.id.localeCompare(b.id),
     );
 }
 

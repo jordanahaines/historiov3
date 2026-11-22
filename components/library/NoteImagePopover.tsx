@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 import type { NoteUrlResult } from "@/components/library/library-actions";
 
@@ -29,6 +29,19 @@ export function NoteImagePopover({
   const [state, setState] = useState<State>({ kind: "closed" });
   const open = state.kind !== "closed";
   const requestId = useRef(0);
+  const wrapper = useRef<HTMLSpanElement>(null);
+
+  // Clicking anywhere outside closes the popover (so two never overlap).
+  useEffect(() => {
+    if (!open) return;
+    function onPointerDown(event: PointerEvent) {
+      if (wrapper.current?.contains(event.target as Node)) return;
+      requestId.current++;
+      setState({ kind: "closed" });
+    }
+    document.addEventListener("pointerdown", onPointerDown);
+    return () => document.removeEventListener("pointerdown", onPointerDown);
+  }, [open]);
 
   async function toggle() {
     const id = ++requestId.current;
@@ -50,6 +63,7 @@ export function NoteImagePopover({
 
   return (
     <span
+      ref={wrapper}
       className="relative inline-block align-baseline"
       onKeyDown={(event) => {
         if (event.key === "Escape" && open) {

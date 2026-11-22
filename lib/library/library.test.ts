@@ -190,3 +190,26 @@ describe("small formatters", () => {
     expect(formatShortDate(null)).toBe("–");
   });
 });
+
+describe("filterInsights tie-break", () => {
+  it("orders insights with the same start by title, in both directions", () => {
+    const { insights } = makeLibrary();
+    const same = insights.map((i, n) => ({
+      ...i,
+      title: ["B", "C", "A"][n] ?? i.title,
+      period: {
+        ...i.period,
+        startsYear: 1000,
+        startsMonth: null,
+        startsDay: null,
+      },
+    }));
+    const asc = filterInsights(
+      same,
+      "",
+      {},
+      { showHidden: true, direction: "asc" },
+    );
+    expect(asc.map((i) => i.title)).toEqual(["A", "B", "C"]);
+  });
+});
