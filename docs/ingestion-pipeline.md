@@ -10,7 +10,8 @@ Kindle Scribe → Share → email PDF to <inbound_token>@<INBOUND_EMAIL_DOMAIN>
       verify signature (raw body) → resolve user from the token → record
       ingestion_event (unique resend_email_id) → start ingestEmailWorkflow → 200
   → ingestEmailWorkflow                 lib/workflows/ingest-email.ts
-      storeAttachments  PDF(s) from Resend → private Storage bucket
+      storeAttachments  PDF(s) → private Storage bucket: Resend attachments, or
+                        (Kindle "You sent a file" mail) a PDF link in the body
       importNotebook    parse → transcribe handwriting → book → user_books → highlights
       startHighlightWorkflows  one processHighlightWorkflow per still-pending highlight
       completeIngestion / failIngestion
