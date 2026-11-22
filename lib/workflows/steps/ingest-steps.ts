@@ -6,7 +6,12 @@ import {
   listPendingHighlightIdsForEvent,
 } from "@/lib/authz/highlights";
 import { updateIngestionEvent } from "@/lib/authz/ingestion-events";
-import { downloadReceivedAttachment } from "@/lib/inbound/resend";
+import {
+  downloadPdfFromLink,
+  downloadReceivedAttachment,
+  getReceivedEmailBody,
+} from "@/lib/inbound/resend";
+import { pdfLinksOf } from "@/lib/inbound/pdf-links";
 import type { PdfAttachment } from "@/lib/inbound/received-email";
 import {
   buildTranscribeOptions,
@@ -26,9 +31,10 @@ export type ImportSummary = {
 };
 
 /**
- * Copies the email's PDF attachments into private Storage and moves the event
- * to `processing`. Steps pass storage paths, never file bytes: step inputs and
- * outputs are persisted.
+ * Copies the email's notebook PDFs into private Storage and moves the event to
+ * `processing`. The PDF is either a real attachment or, for Kindle's "You sent
+ * a file" email, a download link in the body. Steps pass storage paths, never
+ * file bytes: step inputs and outputs are persisted.
  */
 export async function storeAttachments(input: {
   ingestionEventId: string;
@@ -38,16 +44,28 @@ export async function storeAttachments(input: {
 }): Promise<string[]> {
   "use step";
 
-  if (input.attachments.length === 0) {
-    throw new FatalError("The email has no PDF attachment");
+  const files: Uint8Array[] = [];
+  for (const attachment of input.attachments) {
+    files.push(
+      await downloadReceivedAttachment(input.resendEmailId, attachment.id),
+    );
+  }
+
+  if (files.length === 0) {
+    const links = pdfLinksOf(await getReceivedEmailBody(input.resendEmailId));
+    for (const link of links) {
+      files.push(await downloadPdfFromLink(link));
+    }
+  }
+
+  if (files.length === 0) {
+    throw new FatalError(
+      "The email has no PDF attachment or PDF download link",
+    );
   }
 
   const paths: string[] = [];
-  for (const [index, attachment] of input.attachments.entries()) {
-    const bytes = await downloadReceivedAttachment(
-      input.resendEmailId,
-      attachment.id,
-    );
+  for (const [index, bytes] of files.entries()) {
     paths.push(
       await uploadIngestionAttachment(
         input.userId,
