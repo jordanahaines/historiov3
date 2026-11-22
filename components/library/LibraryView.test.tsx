@@ -120,6 +120,15 @@ describe("LibraryView", () => {
     expect(screen.getByPlaceholderText("Search insights")).toBeTruthy();
   });
 
+  it("shows the period as m/d/yyyy and the highlight badge tooltip", () => {
+    setup();
+    expect(screen.getByText("5/29/1453")).toBeTruthy();
+    const badge = screen.getByRole("button", {
+      name: "Show highlights for Fall of Constantinople: 1",
+    });
+    expect(badge.getAttribute("title")).toBe("1 highlight");
+  });
+
   it("shows an empty state for no matches and for an empty library", () => {
     setup();
     fireEvent.change(screen.getByPlaceholderText("Search insights"), {

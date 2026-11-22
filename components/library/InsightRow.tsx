@@ -1,7 +1,7 @@
 import { EntityIcon } from "@/components/library/EntityIcon";
 import { VisibilityIcon } from "@/components/library/VisibilityIcon";
 import { TypeDot } from "@/components/library/TypeDot";
-import { formatPeriod } from "@/lib/insights/period-format";
+import { formatPeriodParts } from "@/lib/insights/period-format";
 import type { LibraryInsight } from "@/lib/library/types";
 
 type InsightRowProps = {
@@ -20,6 +20,7 @@ export function InsightRow({
   onRestore,
 }: InsightRowProps) {
   const hidden = insight.status === "hidden";
+  const period = formatPeriodParts(insight.period);
   const muted = hidden ? "text-ink-muted" : "";
 
   return (
@@ -50,7 +51,10 @@ export function InsightRow({
         </p>
       </td>
       <td className="py-3 pr-4 text-sm whitespace-nowrap">
-        {formatPeriod(insight.period)}
+        {period.start}
+        {period.end ? (
+          <div className="text-ink-muted text-xs">to {period.end}</div>
+        ) : null}
       </td>
       <td className="py-3 pr-4 text-sm">{insight.locationName ?? "–"}</td>
       <td className="py-3">
@@ -58,7 +62,7 @@ export function InsightRow({
           <button
             type="button"
             aria-label={`Show highlights for ${insight.title}: ${insight.highlightCount}`}
-            title="Show highlights"
+            title={`${insight.highlightCount} ${insight.highlightCount === 1 ? "highlight" : "highlights"}`}
             onClick={() => onShowHighlights(insight.id)}
             className="bg-wash text-ink-secondary hover:text-ink focus-visible:outline-link inline-flex items-center gap-1 px-1.5 py-0.5 text-xs focus-visible:outline-2"
           >
