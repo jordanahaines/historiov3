@@ -1,14 +1,14 @@
 # CLAUDE.md
 
-Technical reference for Claude Code working on Historio v3. This repo is a deliberate restart of the original `historio-app` (Boards + six Elements), which grew beyond its purpose. **Scope discipline is the point of v3**: see everything you've read — Kindle highlights, turned into Insights — on one map and one timeline. Don't bring back features from v1 (Elements, grid layouts, comments, forking, per-Element filters) unless an epic below calls for them.
+Technical reference for Claude Code working on Historio v3. This repo is a deliberate restart of the original `historio-app` (Boards + six Elements), which grew beyond its purpose. **Scope discipline is the point of v3**: see everything you've read — Kindle highlights, turned into Insights — on one map and one timeline. Don't bring back features from v1 (Elements, grid layouts, comments, forking, per-Element filters) unless the Project Overview (below) calls for them.
 
-## Epics
+## Project Context (Notion)
 
-- **E1 — Library.** Email Kindle Scribe highlights to a per-user Historio address; parse, contextualize, research into Insights; show them on a Library Map and Library Timeline, then side-by-side with cross-filtering.
-- **E1.5 — Accounts.** Any user can sign up; add Readwise (or other) import in addition to Scribe email.
-- **E2 — Boards.** Boards are always map + timeline side-by-side; they differ only in which books/insights they include. An agent configures, enriches, and answers questions on a board. Boards can be public (view-only).
+The **[Historio v3: Project Overview](https://app.notion.com/p/4162dd9d3fb7813a8ba0cd884c1eac22)** page in Notion is the single source of truth for product context: vision, core concepts, epics and scope (what is in scope now), the feature list, principles, sitemap and its decisions (routes and nav), plan/status, and open questions. It is deliberately **not** duplicated here.
 
-Only E1 is in scope until told otherwise, but nothing in the schema should block E1.5/E2 (everything is already per-user).
+- **Before implementing or speccing a task, fetch it** with `notion-fetch` and make sure the work matches the epic scope and sitemap. Only work in scope is in scope; if a task needs something the Overview marks as a later epic or "Future", flag it rather than building it.
+- **Keep it up to date.** When your work changes anything the Overview describes — a feature shipped or changed, a decision made, a route added or moved, an open question resolved, plan/status moved — update the page (via the Notion MCP) in the same task, and say what you changed in the PR description. If you only notice it is stale or wrong, tell the user instead of silently editing.
+- Technical conventions live in this file. If the Overview and the code disagree on a technical point, flag it rather than guessing.
 
 ## Project Management
 
@@ -18,22 +18,15 @@ notion_database_url: https://app.notion.com/p/40d2dd9d3fb7805ca0ebdc145ab228de
 
 Issues live in the **Historio Product Roadmap** Notion database (shared with the v1 repo — v3 items are distinguished by their title/epic, e.g. an "E1" parent). The `em-*` skills read this section. Access via the Notion MCP tools; always fetch the data source first to get the current schema. Do not create GitHub Issues; PRs live on GitHub (`jordanahaines/historiov3`). Status/Priority/Effort/Category properties and workflow are the same as the v1 repo: `Backlog` = stub, `Planned` = specified, `In progress` = building (PR URL at top of the page body), `Completed` = merged.
 
+## Risky actions
+
+- **Migrations:** fine to generate and apply (`pnpm db:generate`, `pnpm db:migrate`) without asking, including against the shared Supabase project. Everything stays in the `v3` schema.
+- **LLM-spending runs: confirm first.** Anything that calls models in bulk or against real data — `pnpm ingest:pdf`, `pnpm pipeline:resume`, scripts that loop over highlights, large backfills. Say roughly what it will cost (highlight count × stages) and wait for a yes. A single call in a unit test or a one-off prompt check doesn't need one.
+- **Destroying data: confirm first**, even in staging or on rows that look like test data. That covers `DELETE`/`TRUNCATE`/`DROP`, removing Storage objects, resetting or re-importing a user's data, and rolling back a migration that drops columns. Look at what the target contains before asking.
+
 ## Tech Stack
 
 Next.js (App Router) · TypeScript strict · Drizzle ORM · Supabase (Postgres + Auth + Storage) · HeroUI · Tailwind CSS (SCSS only where Tailwind can't) · Vercel · Vercel AI SDK via AI Gateway · MapLibre GL JS + Stadia Maps · vis-timeline (thin custom React wrapper) · Resend (inbound email) · Vitest + React Testing Library · pnpm.
-
-## Architecture: Drizzle + Supabase split
-
-- **Drizzle owns all database access.** Never `supabase.from(...)`. supabase-js is for **Auth and Storage only**. The Supabase Data API is disabled.
-- Drizzle connects directly as the table owner, which bypasses RLS. RLS is enabled on every table with no policies (deny-by-default backstop); **authorization is application code** in `lib/authz/`.
-- Every read/write of user data goes through a function in `lib/authz/` that takes the viewer's id explicitly. No inline Drizzle queries in components, Server Actions, or Route Handlers.
-- `DATABASE_URL` = transaction-mode pooler (port 6543, `prepare: false`) for runtime. `DATABASE_URL_DIRECT` = direct connection (5432) for migrations only.
-
-### The `v3` Postgres schema
-
-This project shares a Supabase project with the old app. **Everything lives in the `v3` schema; never touch `public` or `drizzle`.** The migration journal is `v3.__drizzle_migrations`. Extensions (`postgis`, `pg_trgm`) live in Supabase's `extensions` schema. Source of truth: `lib/db/schema.ts`.
-
-Migrations: `pnpm db:generate` then apply. Note `drizzle-kit migrate` swallows errors silently in this setup — if it exits quietly but tables are missing, apply with `drizzle-orm/postgres-js/migrator` (`migrationsSchema: "v3"`, `migrationsTable: "__drizzle_migrations"`) in a script to see the real error. Custom SQL (triggers, extensions) goes in `drizzle-kit generate --custom`.
 
 ## Data model
 
@@ -44,15 +37,18 @@ Migrations: `pnpm db:generate` then apply. Note `drizzle-kit migrate` swallows e
 - `insights` — per-user, typed (`event|person|place|concept`), `status` `published|hidden` (published by default — no review gate). Period = astronomical year + optional month/day for start and end (null end = the start's own precision unit); generated `starts_value`/`ends_value` for indexed overlap. Area = PostGIS `geometry(Geometry, 4326)` (point or polygon). Read it with `ST_AsGeoJSON(location)`, write with `ST_SetSRID(ST_GeomFromGeoJSON(..), 4326)`.
 - `insight_highlights` — lineage; a book's insights and an insight's books derive through it. `contribution` stores what each highlight said, unmerged.
 
+Pipeline flow, setup and local commands: `docs/ingestion-pipeline.md`. Workflow step functions live in `lib/workflows/`; keep workflow bodies pure orchestration and all logic in `"use step"` functions (they pass ids/paths, never bytes). Tests: `pnpm test` (unit), `pnpm test:integration` (real `v3` DB), `pnpm test:workflows`.
+
 ### Duplicate Insights: merge and enrich
 
-Before creating an Insight, look for an existing one for the same user: same `type`, overlapping period, intersecting/nearby location, trigram-similar title or alias. Shortlist → LLM "same real-world thing?" judge (structured output). On a match: add an `insight_highlights` row (skip if it exists — idempotent), then **regenerate** the description from all contributions (never patch iteratively), add the new title to `aliases`, set `last_enriched_at`. If unsure, create a new Insight — a duplicate is cheaper than a wrong merge. Serialize match-then-write per user (advisory lock / workflow concurrency key) so parallel highlights don't both insert. Known open problems (drift, conflicting dates, user edits, undo) are deferred.
+Implemented in `lib/insights/merge-candidates.ts` (details in `docs/ingestion-pipeline.md`). Before creating an Insight, look for an existing one for the same user: same `type`, overlapping period, intersecting/nearby location, trigram-similar title or alias. Shortlist → LLM "same real-world thing?" judge (structured output). On a match: add an `insight_highlights` row (skip if it exists — idempotent), then **regenerate** the description from all contributions (never patch iteratively), add the new title to `aliases`, set `last_enriched_at`. If unsure, create a new Insight — a duplicate is cheaper than a wrong merge. Serialize match-then-write per user (advisory lock / workflow concurrency key) so parallel highlights don't both insert. Known open problems (drift, conflicting dates, user edits, undo) are deferred.
 
 ## Coding conventions
 
 - Strict TypeScript, no `any` without a comment. Prefer `type`. Validate all external input (forms, webhooks, AI structured output) with `zod`.
 - Server Components for reads, Server Actions for mutations, Route Handlers only for external callers (the Resend webhook).
 - Routes in `app/`, shared components in `components/<feature>/`. One component per file, filename matches the export. DB schema `lib/db/schema.ts`, authz `lib/authz/`, AI prompts `lib/ai/prompts/`. Components `PascalCase`, other files `kebab-case`, DB `snake_case` mapped to camelCase in TS.
+- Library lens/scope/search filtering is client-side state (load the user's library once, filter in the browser); changing a filter must not trigger a server re-render. Mirror scope to the URL with `history.replaceState`, not router navigation.
 - Keep logic out of JSX: compute values above the `return`; extract a component when a list item needs more than a line or two.
 - Tailwind first; HeroUI before custom UI. Map Elements/cards have sharp corners (`rounded-none`).
 - AI: structured output for anything that becomes an Insight; prompts in `lib/ai/prompts/`; every model call uses `resolveModel(ENV_VAR, DEFAULT)` pattern with a documented env var; default to AI Gateway `"provider/model"` strings.

@@ -34,3 +34,10 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# Workflow SDK: generated routes, local world data, vitest bundles, SWC cache
+app/.well-known/workflow
+.workflow-data
+.workflow-vitest
+.swc
+/lib/workflows/.gitignore
