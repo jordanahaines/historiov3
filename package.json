@@ -14,6 +14,7 @@
     "test:workflows": "cd lib/workflows && vitest run --config ../../vitest.workflow.config.ts",
     "ingest:pdf": "tsx scripts/ingest-pdf-cli.mts",
     "pipeline:resume": "tsx scripts/resume-pipeline-cli.mts",
+    "book:cover": "tsx scripts/fetch-cover-cli.mts",
     "format": "prettier --write .",
     "format:check": "prettier --check . '!**/*.md'",
     "db:generate": "drizzle-kit generate",
