@@ -9,6 +9,7 @@ import {
   hiddenCount,
   sectionCounts,
 } from "@/lib/library/filter";
+import { EMPTY_FILTER } from "@/lib/library/filter-conditions";
 import { makeLibrary } from "@/lib/library/fixtures";
 import { highlightStatusLabel } from "@/lib/library/status-label";
 import { formatShortDate } from "@/lib/library/format-date";
@@ -139,6 +140,7 @@ describe("view state in the URL", () => {
       highlightId: null,
       insightId: "i-fall",
       showHidden: true,
+      filter: EMPTY_FILTER,
     };
     expect(parseViewState(serializeViewState(state))).toEqual(state);
   });
@@ -161,6 +163,7 @@ describe("view state in the URL", () => {
         highlightId: null,
         insightId: null,
         showHidden: false,
+        filter: EMPTY_FILTER,
       }),
     ).toBe("");
     expect(parseViewState("lens=boards").lens).toBe("insights");

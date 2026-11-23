@@ -223,3 +223,178 @@ describe("LibraryView", () => {
     expect(screen.getByText("Couldn't load the note image.")).toBeTruthy();
   });
 });
+
+describe("LibraryView filter builder", () => {
+  function openFilter() {
+    fireEvent.click(screen.getByRole("button", { name: /^Filter/ }));
+    return screen.getByRole("dialog");
+  }
+
+  function setField(index: number, field: string) {
+    fireEvent.change(screen.getAllByLabelText("Field")[index]!, {
+      target: { value: field },
+    });
+  }
+
+  const romeFilter = `filter=${encodeURIComponent(
+    JSON.stringify({ c: [["area", "contains", "rome"]] }),
+  )}`;
+
+  it("has no Filter control on Books", () => {
+    setup("lens=books");
+    expect(screen.queryByRole("button", { name: /^Filter/ })).toBeNull();
+  });
+
+  it("narrows the table in the browser, with no server call, and mirrors it to the URL", () => {
+    const fetchSpy = vi.fn();
+    vi.stubGlobal("fetch", fetchSpy);
+    const actions = setup();
+    openFilter();
+    setField(0, "area");
+    fireEvent.change(screen.getByLabelText("Area value"), {
+      target: { value: "rome" },
+    });
+    expect(screen.queryByText("Fall of Constantinople")).toBeNull();
+    expect(screen.getByText("Assassination of Caesar")).toBeTruthy();
+    expect(screen.getByText("1 of 2 insights")).toBeTruthy();
+    expect(screen.getByRole("button", { name: "Filter (1)" })).toBeTruthy();
+    expect(window.location.search).toContain("filter=");
+    expect(fetchSpy).not.toHaveBeenCalled();
+    expect(actions.hideInsight).not.toHaveBeenCalled();
+    vi.unstubAllGlobals();
+  });
+
+  it("shows a type toggle for each insight type and filters by it", () => {
+    setup();
+    openFilter();
+    for (const name of ["Event", "Person", "Place", "Concept"]) {
+      expect(screen.getByRole("button", { name })).toBeTruthy();
+    }
+    fireEvent.click(screen.getByRole("button", { name: "Person" }));
+    expect(
+      screen
+        .getByRole("button", { name: "Person" })
+        .getAttribute("aria-pressed"),
+    ).toBe("true");
+    expect(screen.getByText("Nothing matches.")).toBeTruthy();
+    fireEvent.click(screen.getByRole("button", { name: "Event" }));
+    expect(screen.getByText("Fall of Constantinople")).toBeTruthy();
+  });
+
+  it("joins conditions with the and/or select, which applies to every row", () => {
+    setup();
+    openFilter();
+    setField(0, "area");
+    fireEvent.change(screen.getByLabelText("Area value"), {
+      target: { value: "rome" },
+    });
+    fireEvent.click(screen.getByRole("button", { name: "+ Add condition" }));
+    setField(1, "area");
+    fireEvent.change(screen.getAllByLabelText("Area value")[1]!, {
+      target: { value: "istanbul" },
+    });
+    expect(screen.getByText("Nothing matches.")).toBeTruthy();
+    fireEvent.change(screen.getByLabelText("Join conditions with"), {
+      target: { value: "or" },
+    });
+    expect(screen.getByText("Fall of Constantinople")).toBeTruthy();
+    expect(screen.getByText("Assassination of Caesar")).toBeTruthy();
+    expect(decodeURIComponent(window.location.search)).toContain('"j":"or"');
+  });
+
+  it("ignores incomplete conditions and removes or clears conditions", () => {
+    setup();
+    openFilter();
+    setField(0, "area");
+    expect(screen.getByText("Fall of Constantinople")).toBeTruthy();
+    expect(screen.getByRole("button", { name: "Filter" })).toBeTruthy();
+    expect(window.location.search).not.toContain("filter=");
+    fireEvent.change(screen.getByLabelText("Area value"), {
+      target: { value: "rome" },
+    });
+    expect(screen.queryByText("Fall of Constantinople")).toBeNull();
+    fireEvent.click(screen.getByRole("button", { name: "Remove condition" }));
+    expect(screen.getByText("Fall of Constantinople")).toBeTruthy();
+    fireEvent.click(screen.getByRole("button", { name: "+ Add condition" }));
+    fireEvent.click(screen.getByRole("button", { name: "Clear all" }));
+    expect(screen.queryAllByLabelText("Field")).toHaveLength(0);
+  });
+
+  it("restores a filter from the URL and on Back/Forward", () => {
+    setup(romeFilter);
+    expect(screen.queryByText("Fall of Constantinople")).toBeNull();
+    expect(screen.getByRole("button", { name: "Filter (1)" })).toBeTruthy();
+    act(() => {
+      window.history.replaceState(null, "", "/library");
+      window.dispatchEvent(new PopStateEvent("popstate"));
+    });
+    expect(screen.getByText("Fall of Constantinople")).toBeTruthy();
+    expect(screen.getByRole("button", { name: "Filter" })).toBeTruthy();
+  });
+
+  it("ignores a malformed filter in the URL", () => {
+    setup("filter=%7Bbroken");
+    expect(screen.getByText("Fall of Constantinople")).toBeTruthy();
+    expect(screen.getByRole("button", { name: "Filter" })).toBeTruthy();
+  });
+
+  it("drops the filter when the section changes", () => {
+    setup(romeFilter);
+    fireEvent.click(screen.getByRole("button", { name: /^Highlights/ }));
+    expect(window.location.search).not.toContain("filter=");
+    expect(screen.getByRole("button", { name: "Filter" })).toBeTruthy();
+    expect(screen.getByText(/Ides of March/)).toBeTruthy();
+  });
+
+  it("clears the filter along with scope from Clear", () => {
+    setup(romeFilter);
+    fireEvent.click(screen.getByRole("button", { name: "Clear" }));
+    expect(screen.getByText("Fall of Constantinople")).toBeTruthy();
+    expect(window.location.search).not.toContain("filter=");
+  });
+
+  it("combines with the insight scope chip on Highlights", () => {
+    setup("lens=highlights&insight=i-fall");
+    openFilter();
+    setField(0, "status");
+    fireEvent.click(screen.getByRole("button", { name: "Pending" }));
+    expect(screen.getByText("Nothing matches.")).toBeTruthy();
+    fireEvent.click(screen.getByRole("button", { name: "Pending" }));
+    fireEvent.click(screen.getByRole("button", { name: "Researched" }));
+    expect(screen.getByText(/Constantinople fell/)).toBeTruthy();
+    expect(screen.queryByText(/Ides of March/)).toBeNull();
+    expect(screen.getByText(/In Fall of Constantinople/)).toBeTruthy();
+  });
+
+  it("offers only text operators for Linked insights, with no insight picker", () => {
+    setup("lens=highlights");
+    openFilter();
+    setField(0, "insights");
+    const options = Array.from(
+      (screen.getByLabelText("Operator") as HTMLSelectElement).options,
+    ).map((o) => o.textContent);
+    expect(options).toEqual(["contains", "is empty", "is not empty"]);
+    fireEvent.change(screen.getByLabelText("Linked insights value"), {
+      target: { value: "caesar" },
+    });
+    expect(screen.getByText(/Ides of March/)).toBeTruthy();
+    expect(screen.queryByText(/Constantinople fell/)).toBeNull();
+  });
+
+  it("closes on Escape and returns focus to the Filter button", () => {
+    setup();
+    const dialog = openFilter();
+    fireEvent.keyDown(dialog, { key: "Escape" });
+    expect(screen.queryByRole("dialog")).toBeNull();
+    expect(document.activeElement).toBe(
+      screen.getByRole("button", { name: /^Filter/ }),
+    );
+  });
+
+  it("closes on an outside click", () => {
+    setup();
+    openFilter();
+    fireEvent.pointerDown(document.body);
+    expect(screen.queryByRole("dialog")).toBeNull();
+  });
+});

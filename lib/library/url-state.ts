@@ -1,3 +1,9 @@
+import {
+  EMPTY_FILTER,
+  parseFilter,
+  serializeFilter,
+  type FilterState,
+} from "@/lib/library/filter-conditions";
 import type { Lens } from "@/lib/library/types";
 
 export type ViewState = {
@@ -8,6 +14,8 @@ export type ViewState = {
   /** Highlights lens only: the insight whose highlights are shown. */
   insightId: string | null;
   showHidden: boolean;
+  /** Highlights and Insights lenses only; belongs to the current lens. */
+  filter: FilterState;
 };
 
 export const DEFAULT_LENS: Lens = "insights";
@@ -21,19 +29,24 @@ export const DEFAULT_VIEW_STATE: ViewState = {
   highlightId: null,
   insightId: null,
   showHidden: false,
+  filter: EMPTY_FILTER,
 };
 
-/** Restores a view from `?lens=&q=&book=&highlight=&insight=&hidden=`. Unknown input is ignored. */
+/** Restores a view from `?lens=&q=&book=&highlight=&insight=&hidden=&filter=`. Unknown input is ignored. */
 export function parseViewState(search: string): ViewState {
   const params = new URLSearchParams(search);
-  const lens = params.get("lens");
+  const lensParam = params.get("lens");
+  const lens = LENSES.includes(lensParam as Lens)
+    ? (lensParam as Lens)
+    : DEFAULT_LENS;
   return {
-    lens: LENSES.includes(lens as Lens) ? (lens as Lens) : DEFAULT_LENS,
+    lens,
     q: params.get("q") ?? "",
     bookId: params.get("book") || null,
     highlightId: params.get("highlight") || null,
     insightId: params.get("insight") || null,
     showHidden: params.get("hidden") === "1",
+    filter: parseFilter(params.get("filter"), lens),
   };
 }
 
@@ -46,5 +59,7 @@ export function serializeViewState(state: ViewState): string {
   if (state.highlightId) params.set("highlight", state.highlightId);
   if (state.insightId) params.set("insight", state.insightId);
   if (state.showHidden) params.set("hidden", "1");
+  const filter = serializeFilter(state.lens, state.filter);
+  if (filter) params.set("filter", filter);
   return params.toString();
 }

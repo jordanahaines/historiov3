@@ -1,7 +1,13 @@
+import type { ReactNode } from "react";
+
 export type ScopeChip = { key: string; label: string };
 
 type ScopeBarProps = {
   chips: ScopeChip[];
+  /** The Filter button and popover (Highlights and Insights only). */
+  filterControl?: ReactNode;
+  /** Show Clear even with no chips, e.g. when a filter is active. */
+  canClear?: boolean;
   onRemoveChip: (key: string) => void;
   onClear: () => void;
   /** Only the Insights section has hidden items to show. */
@@ -16,6 +22,8 @@ type ScopeBarProps = {
 /** Active scope chips, a Clear link, the Show hidden checkbox and the result count. */
 export function ScopeBar({
   chips,
+  filterControl,
+  canClear = false,
   onRemoveChip,
   onClear,
   hidden,
@@ -39,7 +47,8 @@ export function ScopeBar({
           </button>
         </span>
       ))}
-      {chips.length > 0 ? (
+      {filterControl}
+      {chips.length > 0 || canClear ? (
         <button
           type="button"
           onClick={onClear}

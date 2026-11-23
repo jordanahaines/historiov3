@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 
 import { BooksTable } from "@/components/library/BooksTable";
+import { FilterPopover } from "@/components/library/filter/FilterPopover";
 import { HighlightsTable } from "@/components/library/HighlightsTable";
 import { InsightsTable } from "@/components/library/InsightsTable";
 import type { LibraryActions } from "@/components/library/library-actions";
@@ -10,6 +11,13 @@ import { ScopeBar, type ScopeChip } from "@/components/library/ScopeBar";
 import { SearchField } from "@/components/library/SearchField";
 import { SectionMenu } from "@/components/library/SectionMenu";
 import { applyInsightStatus } from "@/lib/library/apply-insight-status";
+import {
+  activeCount,
+  EMPTY_FILTER,
+  HIGHLIGHT_FIELDS,
+  INSIGHT_FIELDS,
+  type FilterState,
+} from "@/lib/library/filter-conditions";
 import {
   filterBooks,
   filterHighlights,
@@ -138,17 +146,28 @@ export function LibraryView({
     [scopeBook, scopeHighlight, scopeInsight, lens],
   );
 
+  const filterCount =
+    lens === "insights"
+      ? activeCount(INSIGHT_FIELDS, view.filter)
+      : lens === "highlights"
+        ? activeCount(HIGHLIGHT_FIELDS, view.filter)
+        : 0;
   const counts = sectionCounts(data);
   const hidden = hiddenCount(data.insights);
 
   const books = useMemo(() => filterBooks(data.books, q), [data.books, q]);
   const highlights = useMemo(
-    () => filterHighlights(data.highlights, q, scope),
-    [data.highlights, q, scope],
+    () => filterHighlights(data.highlights, q, scope, view.filter),
+    [data.highlights, q, scope, view.filter],
   );
   const insights = useMemo(
-    () => filterInsights(data.insights, q, scope, { showHidden, direction }),
-    [data.insights, q, scope, showHidden, direction],
+    () =>
+      filterInsights(data.insights, q, scope, {
+        showHidden,
+        direction,
+        filter: view.filter,
+      }),
+    [data.insights, q, scope, showHidden, direction, view.filter],
   );
   const insightTotal = useMemo(
     () =>
@@ -195,7 +214,12 @@ export function LibraryView({
       bookId: null,
       highlightId: null,
       insightId: null,
+      filter: EMPTY_FILTER,
     }));
+  }
+
+  function changeFilter(filter: FilterState) {
+    setView((current) => ({ ...current, filter }));
   }
 
   function removeChip(key: string) {
@@ -244,6 +268,7 @@ export function LibraryView({
       bookId: null,
       highlightId: highlight.id,
       insightId: null,
+      filter: EMPTY_FILTER,
     }));
   }
 
@@ -254,6 +279,7 @@ export function LibraryView({
       bookId: null,
       highlightId: null,
       insightId,
+      filter: EMPTY_FILTER,
     }));
   }
 
@@ -290,7 +316,21 @@ export function LibraryView({
                   bookId: null,
                   highlightId: null,
                   insightId: null,
+                  filter: EMPTY_FILTER,
                 }))
+              }
+              canClear={filterCount > 0}
+              filterControl={
+                lens === "books" ? undefined : (
+                  <FilterPopover
+                    key={lens}
+                    lens={lens}
+                    filter={view.filter}
+                    activeCount={filterCount}
+                    books={data.books}
+                    onChange={changeFilter}
+                  />
+                )
               }
               hidden={
                 lens === "insights"
@@ -327,6 +367,7 @@ export function LibraryView({
                 bookId,
                 highlightId: null,
                 insightId: null,
+                filter: EMPTY_FILTER,
               }))
             }
             onShowInsights={(bookId) =>
@@ -336,6 +377,7 @@ export function LibraryView({
                 bookId,
                 highlightId: null,
                 insightId: null,
+                filter: EMPTY_FILTER,
               }))
             }
           />
