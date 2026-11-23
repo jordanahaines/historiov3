@@ -35,7 +35,10 @@ function setup(search = "", actions = makeActions(), data = makeLibrary()) {
 }
 
 beforeEach(() => window.history.replaceState(null, "", "/library"));
-afterEach(cleanup);
+afterEach(() => {
+  cleanup();
+  vi.unstubAllGlobals();
+});
 
 describe("LibraryView", () => {
   it("opens on Insights by default with counts for every section", () => {
@@ -261,7 +264,42 @@ describe("LibraryView filter builder", () => {
     expect(window.location.search).toContain("filter=");
     expect(fetchSpy).not.toHaveBeenCalled();
     expect(actions.hideInsight).not.toHaveBeenCalled();
-    vi.unstubAllGlobals();
+  });
+
+  it("converts a BC year to an astronomical year and keeps the era when a row is removed", () => {
+    setup();
+    openFilter();
+    setField(0, "period");
+    fireEvent.change(screen.getByLabelText("Period from era"), {
+      target: { value: "BC" },
+    });
+    fireEvent.change(screen.getByLabelText("Period to era"), {
+      target: { value: "BC" },
+    });
+    fireEvent.change(screen.getByLabelText("Period from"), {
+      target: { value: "3500" },
+    });
+    fireEvent.change(screen.getByLabelText("Period to"), {
+      target: { value: "3300" },
+    });
+    expect(decodeURIComponent(window.location.search)).toContain(
+      "[-3499,-3299]",
+    );
+    fireEvent.click(screen.getByRole("button", { name: "+ Add condition" }));
+    setField(1, "period");
+    fireEvent.change(screen.getAllByLabelText("Period from")[1]!, {
+      target: { value: "1300" },
+    });
+    fireEvent.click(
+      screen.getAllByRole("button", { name: "Remove condition" })[0]!,
+    );
+    // The surviving row is CE 1300, not the removed row's BC.
+    expect(
+      (screen.getByLabelText("Period from era") as HTMLSelectElement).value,
+    ).toBe("CE");
+    expect(
+      (screen.getByLabelText("Period from") as HTMLInputElement).value,
+    ).toBe("1300");
   });
 
   it("shows a type toggle for each insight type and filters by it", () => {

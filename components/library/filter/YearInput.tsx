@@ -14,9 +14,10 @@ const field =
 
 /** A year with a CE/BC era; the value it reports is the astronomical year. */
 export function YearInput({ label, value, onChange }: YearInputProps) {
-  const [era, setEra] = useState<"CE" | "BC">(
-    value !== null && value <= 0 ? "BC" : "CE",
-  );
+  // The era follows the value when there is one; local state only remembers
+  // the choice while the number is empty, so a reused row never shows a stale era.
+  const [emptyEra, setEra] = useState<"CE" | "BC">("CE");
+  const era = value === null ? emptyEra : value <= 0 ? "BC" : "CE";
   const shown = value === null ? "" : String(value <= 0 ? 1 - value : value);
 
   function emit(raw: string, nextEra: "CE" | "BC") {
