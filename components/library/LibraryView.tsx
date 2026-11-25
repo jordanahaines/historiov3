@@ -14,10 +14,8 @@ import { SearchField } from "@/components/library/SearchField";
 import { SectionMenu } from "@/components/library/SectionMenu";
 import { applyInsightStatus } from "@/lib/library/apply-insight-status";
 import {
-  activeCount,
+  activeCountFor,
   EMPTY_FILTER,
-  HIGHLIGHT_FIELDS,
-  INSIGHT_FIELDS,
   type FilterState,
 } from "@/lib/library/filter-conditions";
 import {
@@ -160,12 +158,7 @@ export function LibraryView({
     [scopeBook, scopeHighlight, scopeInsight, lens],
   );
 
-  const filterCount =
-    lens === "insights"
-      ? activeCount(INSIGHT_FIELDS, view.filter)
-      : lens === "highlights"
-        ? activeCount(HIGHLIGHT_FIELDS, view.filter)
-        : 0;
+  const filterCount = activeCountFor(lens, view.filter);
   // Read live from data (not a snapshot) so hide/restore updates it at once;
   // not filtered, so a hidden insight stays open while "Show hidden" is off.
   const drawerInsight =

@@ -340,6 +340,13 @@ export function isConditionComplete<T>(
   return !!op && isValueComplete(op.kind, condition.value);
 }
 
+/** Active condition count for a lens; the Books lens has no filter. */
+export function activeCountFor(lens: Lens, filter: FilterState): number {
+  if (lens === "insights") return activeCount(INSIGHT_FIELDS, filter);
+  if (lens === "highlights") return activeCount(HIGHLIGHT_FIELDS, filter);
+  return 0;
+}
+
 /** Number of conditions that will actually narrow the list. */
 export function activeCount<T>(
   fields: FieldDef<T>[],

@@ -23,6 +23,8 @@ export function YearInput({ label, value, onChange }: YearInputProps) {
   function emit(raw: string, nextEra: "CE" | "BC") {
     const n = Number(raw);
     if (raw.trim() === "" || !Number.isInteger(n) || n < 1) {
+      // Remember the era so retyping after a clear keeps it.
+      setEra(nextEra);
       onChange(null);
       return;
     }
