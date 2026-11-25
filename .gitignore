@@ -41,3 +41,6 @@ app/.well-known/workflow
 .workflow-vitest
 .swc
 /lib/workflows/.gitignore
+
+# local scratch output (pnpm book:cover)
+/tmp/
