@@ -46,3 +46,24 @@ button:not(:disabled),
 summary {
   cursor: pointer;
 }
+
+/* Highlighter-pen effect for quotes: two uneven, overlapping bands with lopsided rounded ends, repeated per wrapped line. */
+.marker-highlight {
+  --marker: rgb(255 214 10 / 0.15);
+  --marker-deep: rgb(255 214 10 / 0.15);
+  padding: 0 0.2em;
+  margin: 0 -0.2em;
+  border-radius: 0.35em 0.9em 0.4em 0.8em / 0.8em 0.35em 0.7em 0.4em;
+  background-image:
+    linear-gradient(var(--marker), var(--marker)),
+    linear-gradient(var(--marker-deep), var(--marker-deep));
+  background-repeat: no-repeat;
+  background-size:
+    100% 72%,
+    93% 36%;
+  background-position:
+    0 55%,
+    6% 100%;
+  -webkit-box-decoration-break: clone;
+  box-decoration-break: clone;
+}

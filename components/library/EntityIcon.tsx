@@ -7,7 +7,7 @@ type EntityIconProps = {
   className?: string;
 };
 
-/** Hand-drawn icons exported from historiov3.pen (public/icons). */
+/** Hand-drawn icons exported from the external design file historiov3.pen, see CLAUDE.md (public/icons). */
 export function EntityIcon({
   kind,
   size = "large",

@@ -17,7 +17,7 @@ Real Supabase Auth replaces the body of `resolveViewer`; call sites do not chang
 
 ## Library
 
-`getLibrary(viewerId)` (`lib/authz/library.ts`) loads books, highlights and insights once; `LibraryView` filters, scopes and sorts them in the browser, and mirrors lens/search/scope/hidden to the URL: changing section or scope uses `history.pushState` (so Back/Forward move between views, restored on `popstate`), while typing a search or toggling hidden uses `history.replaceState` (`lens`, `q`, `book`, `highlight`, `insight`, `hidden=1`, `filter`).
+`getLibrary(viewerId)` (`lib/authz/library.ts`) loads books, highlights and insights once; `LibraryView` filters, scopes and sorts them in the browser, and mirrors lens/search/scope/hidden to the URL: changing section or scope, or opening the Insight drawer from closed, uses `history.pushState` (so Back/Forward move between views, restored on `popstate`), while typing a search, toggling hidden, switching the drawer to another insight or closing it uses `history.replaceState` (`lens`, `q`, `book`, `highlight`, `insight`, `drawer`, `hidden=1`, `filter`). `drawer=<id>` is the item open in the drawer: an insight in the Insights lens or a highlight in the Highlights lens (both are read from the loaded library, no server round trip). It is separate from `insight=` (which scopes the Highlights lens); an id that isn't in the library for the current lens is ignored, and a hidden insight opens even with Show hidden off. Opening an insight from the Highlight drawer switches to the Insights lens with that drawer open (a history push); "Open book" scopes Highlights to the book and closes the drawer. Removed books (`user_books.status='removed'`) are excluded everywhere.
 
 ### Filter builder
 

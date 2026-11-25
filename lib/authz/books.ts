@@ -1,4 +1,4 @@
-import { and, eq } from "drizzle-orm";
+import { and, eq, isNull } from "drizzle-orm";
 
 import { db } from "@/lib/db";
 import { books, userBooks } from "@/lib/db/schema";
@@ -51,6 +51,34 @@ export async function findOrCreateBookByAsin(
     .limit(1);
   if (!existing) throw new Error(`Book with ASIN ${input.asin} vanished`);
   return { book: existing, created: false };
+}
+
+/** Sets the cover only if the book has none, so a user-visible cover is never overwritten. */
+export async function setBookCoverIfMissing(
+  bookId: string,
+  coverImageUrl: string,
+): Promise<void> {
+  await db
+    .update(books)
+    .set({ coverImageUrl })
+    .where(and(eq(books.id, bookId), isNull(books.coverImageUrl)));
+}
+
+/** Books with no cover yet, oldest first. For the backfill. */
+export async function listBooksWithoutCover(
+  limit?: number,
+): Promise<Pick<Book, "id" | "asin" | "title" | "author">[]> {
+  const query = db
+    .select({
+      id: books.id,
+      asin: books.asin,
+      title: books.title,
+      author: books.author,
+    })
+    .from(books)
+    .where(isNull(books.coverImageUrl))
+    .orderBy(books.createdAt);
+  return limit ? query.limit(limit) : query;
 }
 
 /**

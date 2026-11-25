@@ -5,12 +5,17 @@ import type { LibraryHighlight } from "@/lib/library/types";
 
 type HighlightsTableProps = {
   highlights: LibraryHighlight[];
+  /** The highlight open in the drawer, highlighted in the table. */
+  selectedId: string | null;
+  onOpen: (highlightId: string) => void;
   onShowInsights: (highlight: LibraryHighlight) => void;
   getNoteImageUrl: (highlightId: string) => Promise<NoteUrlResult>;
 };
 
 export function HighlightsTable({
   highlights,
+  selectedId,
+  onOpen,
   onShowInsights,
   getNoteImageUrl,
 }: HighlightsTableProps) {
@@ -29,6 +34,8 @@ export function HighlightsTable({
           <HighlightRow
             key={highlight.id}
             highlight={highlight}
+            selected={highlight.id === selectedId}
+            onOpen={onOpen}
             onShowInsights={onShowInsights}
             getNoteImageUrl={getNoteImageUrl}
           />

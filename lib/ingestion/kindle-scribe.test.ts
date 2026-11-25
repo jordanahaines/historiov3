@@ -11,6 +11,7 @@ const findExistingExternalIds = vi.fn();
 const createHighlights = vi.fn();
 const uploadNoteScan = vi.fn();
 const transcribeNotes = vi.fn();
+const ensureBookCover = vi.fn();
 
 vi.mock("@/lib/authz/books", () => ({
   findOrCreateBookByAsin,
@@ -20,6 +21,7 @@ vi.mock("@/lib/authz/highlights", () => ({
   findExistingExternalIds,
   createHighlights,
 }));
+vi.mock("@/lib/books/book-covers", () => ({ ensureBookCover }));
 vi.mock("@/lib/storage/buckets", () => ({ uploadNoteScan }));
 vi.mock("historio-kindle-scribe-notes-parser", () => ({
   transcribeNotes,
@@ -101,6 +103,26 @@ describe("saveNewHighlights", () => {
     await saveNewHighlights(notebook([typed]), input);
     expect(order).toEqual(["userBook", "highlights"]);
     expect(ensureUserBook).toHaveBeenCalledWith("user-1", "book-1");
+  });
+
+  it("fetches a cover only for a newly created book without one", async () => {
+    await saveNewHighlights(notebook([typed]), input);
+    expect(ensureBookCover).toHaveBeenCalledWith(BOOK);
+
+    ensureBookCover.mockClear();
+    findOrCreateBookByAsin.mockResolvedValue({ book: BOOK, created: false });
+    await saveNewHighlights(notebook([typed]), input);
+    findOrCreateBookByAsin.mockResolvedValue({
+      book: { ...BOOK, coverImageUrl: "https://x/c.jpg" },
+      created: true,
+    });
+    await saveNewHighlights(notebook([typed]), input);
+    findOrCreateBookByAsin.mockResolvedValue({ book: BOOK, created: true });
+    await saveNewHighlights(notebook([typed]), {
+      ...input,
+      skipMediaUpload: true,
+    });
+    expect(ensureBookCover).not.toHaveBeenCalled();
   });
 
   it("saves typed notes as-is and transcribes handwritten ones with a scan path", async () => {

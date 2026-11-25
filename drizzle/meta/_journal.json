@@ -43,6 +43,13 @@
       "when": 1794517230095,
       "tag": "0005_storage_buckets",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1795626631385,
+      "tag": "0006_book_covers_bucket",
+      "breakpoints": true
     }
   ]
 }

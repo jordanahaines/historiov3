@@ -7,6 +7,9 @@ type InsightsTableProps = {
   insights: LibraryInsight[];
   direction: SortDirection;
   errors: Record<string, string>;
+  /** The insight open in the drawer, highlighted in the table. */
+  selectedId: string | null;
+  onOpen: (insightId: string) => void;
   onToggleSort: () => void;
   onShowHighlights: (insightId: string) => void;
   onHide: (id: string) => void;
@@ -17,6 +20,8 @@ export function InsightsTable({
   insights,
   direction,
   errors,
+  selectedId,
+  onOpen,
   onToggleSort,
   onShowHighlights,
   onHide,
@@ -44,6 +49,8 @@ export function InsightsTable({
             key={insight.id}
             insight={insight}
             error={errors[insight.id]}
+            selected={insight.id === selectedId}
+            onOpen={onOpen}
             onShowHighlights={onShowHighlights}
             onHide={onHide}
             onRestore={onRestore}
