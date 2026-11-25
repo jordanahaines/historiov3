@@ -121,9 +121,9 @@ describe("LibraryView", () => {
     expect(screen.getByPlaceholderText("Search insights")).toBeTruthy();
   });
 
-  it("shows the period as m/d/yyyy and the highlight badge tooltip", () => {
+  it("shows the period as mm/dd/yyyy and the highlight badge tooltip", () => {
     setup();
-    expect(screen.getByText("5/29/1453")).toBeTruthy();
+    expect(screen.getByText("05/29/1453")).toBeTruthy();
     const badge = screen.getByRole("button", {
       name: "Show highlights for Fall of Constantinople: 1",
     });
@@ -247,7 +247,7 @@ describe("Insight drawer", () => {
       d.getByRole("heading", { name: "Fall of Constantinople" }),
     ).toBeTruthy();
     expect(d.getByText("event")).toBeTruthy();
-    expect(d.getByText("5/29/1453 · Istanbul")).toBeTruthy();
+    expect(d.getByText("05/29/1453 · Istanbul")).toBeTruthy();
     expect(d.getByText("Also: Conquest of Constantinople")).toBeTruthy();
     expect(
       d.getByText("The Ottoman capture of the Byzantine capital."),
@@ -504,7 +504,7 @@ describe("Highlight drawer", () => {
     expect(
       d.getByText("Constantinople fell to the Ottomans in 1453."),
     ).toBeTruthy();
-    expect(d.getByText("Captured 11/9/2026 · Researched")).toBeTruthy();
+    expect(d.getByText("Captured 11/09/2026 · Researched")).toBeTruthy();
     expect(d.getByText("Your note")).toBeTruthy();
     expect(d.getByText("check the date")).toBeTruthy();
     expect(
@@ -514,7 +514,7 @@ describe("Highlight drawer", () => {
     expect(d.getByText("Peter Frankopan · p. 12")).toBeTruthy();
     expect(d.getByText("Became 1 insight")).toBeTruthy();
     expect(d.getByText("Fall of Constantinople")).toBeTruthy();
-    expect(d.getByText("5/29/1453")).toBeTruthy();
+    expect(d.getByText("05/29/1453")).toBeTruthy();
     expect(window.location.search).toBe("?lens=highlights&drawer=h-1");
     expect(document.activeElement).toBe(dialog());
   });

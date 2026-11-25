@@ -11,7 +11,7 @@ import {
 } from "@/lib/library/filter";
 import { makeLibrary } from "@/lib/library/fixtures";
 import { highlightStatusLabel } from "@/lib/library/status-label";
-import { formatShortDate } from "@/lib/library/format-date";
+import { formatDate } from "@/lib/library/format-date";
 import { parseViewState, serializeViewState } from "@/lib/library/url-state";
 
 const asc = { showHidden: false, direction: "asc" as const };
@@ -187,9 +187,9 @@ describe("small formatters", () => {
     expect(coverColor("abc")).toMatch(/^#[0-9A-F]{6}$/);
   });
 
-  it("formats dates as 9 Nov 2026", () => {
-    expect(formatShortDate("2026-11-09T10:00:00Z")).toBe("9 Nov 2026");
-    expect(formatShortDate(null)).toBe("–");
+  it("formats dates as mm/dd/yyyy", () => {
+    expect(formatDate("2026-11-09T10:00:00Z")).toBe("11/09/2026");
+    expect(formatDate(null)).toBe("–");
   });
 });
 

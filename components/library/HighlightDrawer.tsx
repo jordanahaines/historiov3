@@ -8,7 +8,7 @@ import { EntityIcon } from "@/components/library/EntityIcon";
 import { NoteImagePopover } from "@/components/library/NoteImagePopover";
 import type { NoteUrlResult } from "@/components/library/library-actions";
 import { TypeDot } from "@/components/library/TypeDot";
-import { formatNumericDate } from "@/lib/library/format-date";
+import { formatDate } from "@/lib/library/format-date";
 import { periodLabel } from "@/lib/library/period-label";
 import { highlightStatusLabel } from "@/lib/library/status-label";
 import type {
@@ -83,7 +83,7 @@ export function HighlightDrawer({
             <span className="marker-highlight">{highlight.text}</span>
           </p>
           <p className="text-ink-muted text-xs">
-            Captured {formatNumericDate(highlight.capturedAt)}
+            Captured {formatDate(highlight.capturedAt)}
             {"  ·  "}
             {status.label}
           </p>

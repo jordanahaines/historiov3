@@ -1,7 +1,7 @@
 import { BookCover } from "@/components/library/BookCover";
 import { RelationTile } from "@/components/library/RelationTile";
 import { TableHeader } from "@/components/library/TableHeader";
-import { formatShortDate } from "@/lib/library/format-date";
+import { formatDate } from "@/lib/library/format-date";
 import type { LibraryBook } from "@/lib/library/types";
 
 type BooksTableProps = {
@@ -45,7 +45,7 @@ export function BooksTable({
               </div>
             </td>
             <td className="py-3 pr-4 text-sm">
-              {formatShortDate(book.lastHighlightAt)}
+              {formatDate(book.lastHighlightAt)}
             </td>
             <td className="py-3">
               <div className="flex justify-evenly">

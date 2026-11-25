@@ -1,7 +1,7 @@
 import { NoteImagePopover } from "@/components/library/NoteImagePopover";
 import { StatusSteps } from "@/components/library/StatusSteps";
 import type { NoteUrlResult } from "@/components/library/library-actions";
-import { formatShortDate } from "@/lib/library/format-date";
+import { formatDate } from "@/lib/library/format-date";
 import type { LibraryHighlight } from "@/lib/library/types";
 
 type HighlightRowProps = {
@@ -93,7 +93,7 @@ export function HighlightRow({
         <StatusSteps status={highlight.status} />
       </td>
       <td className="py-3 text-sm whitespace-nowrap">
-        {formatShortDate(highlight.capturedAt)}
+        {formatDate(highlight.capturedAt)}
       </td>
     </tr>
   );
