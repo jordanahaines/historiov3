@@ -152,6 +152,10 @@ export function highlightStatusGroup(status: LibraryHighlight["status"]) {
   return status === "contextualized" ? "pending" : status;
 }
 
+/** The text a "content" condition searches: the insight's title and description. */
+const insightContent = (insight: LibraryInsight) =>
+  `${insight.title}\n${insight.description ?? ""}`;
+
 export const INSIGHT_FIELDS: FieldDef<LibraryInsight>[] = [
   {
     id: "type",
@@ -197,6 +201,24 @@ export const INSIGHT_FIELDS: FieldDef<LibraryInsight>[] = [
         label: "is after",
         kind: "year",
         test: (i, v) => periodValues(i.period).start >= num(v),
+      },
+    ],
+  },
+  {
+    id: "content",
+    label: "Content",
+    ops: [
+      {
+        id: "contains",
+        label: "contains",
+        kind: "text",
+        test: (i, v) => contains(insightContent(i), text(v)),
+      },
+      {
+        id: "notContains",
+        label: "does not contain",
+        kind: "text",
+        test: (i, v) => !contains(insightContent(i), text(v)),
       },
     ],
   },

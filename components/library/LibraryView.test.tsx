@@ -684,21 +684,61 @@ describe("LibraryView filter builder", () => {
     ).toBe("1300");
   });
 
-  it("shows a type toggle for each insight type and filters by it", () => {
+  function pick(box: string, option: string) {
+    const input = screen.getByRole("combobox", { name: box });
+    fireEvent.focus(input);
+    fireEvent.click(screen.getByRole("option", { name: option }));
+  }
+
+  it("offers each insight type in an autocomplete multi-select and filters by it", () => {
     setup();
     openFilter();
+    const input = screen.getByRole("combobox", { name: "Type search" });
+    fireEvent.focus(input);
     for (const name of ["Event", "Person", "Place", "Concept"]) {
-      expect(screen.getByRole("button", { name })).toBeTruthy();
+      expect(screen.getByRole("option", { name })).toBeTruthy();
     }
-    fireEvent.click(screen.getByRole("button", { name: "Person" }));
-    expect(
-      screen
-        .getByRole("button", { name: "Person" })
-        .getAttribute("aria-pressed"),
-    ).toBe("true");
+    fireEvent.click(screen.getByRole("option", { name: "Person" }));
+    // The list stays open for more picks, and the pick shows as a tag.
+    expect(screen.getByRole("listbox")).toBeTruthy();
+    expect(screen.getByRole("button", { name: "Remove Person" })).toBeTruthy();
     expect(screen.getByText("Nothing matches.")).toBeTruthy();
-    fireEvent.click(screen.getByRole("button", { name: "Event" }));
+    fireEvent.click(screen.getByRole("option", { name: "Event" }));
     expect(screen.getByText("Fall of Constantinople")).toBeTruthy();
+    fireEvent.click(screen.getByRole("button", { name: "Remove Event" }));
+    expect(screen.getByText("Nothing matches.")).toBeTruthy();
+  });
+
+  it("narrows the option list as you type and selects with the keyboard", () => {
+    setup();
+    openFilter();
+    const input = screen.getByRole("combobox", { name: "Type search" });
+    fireEvent.change(input, { target: { value: "con" } });
+    expect(
+      within(screen.getByRole("listbox")).getAllByRole("option"),
+    ).toHaveLength(1);
+    fireEvent.keyDown(input, { key: "Enter" });
+    expect(screen.getByRole("button", { name: "Remove Concept" })).toBeTruthy();
+    // Escape closes the list first and leaves the popover open.
+    fireEvent.keyDown(input, { key: "Escape" });
+    expect(screen.queryByRole("listbox")).toBeNull();
+    expect(screen.getByRole("dialog")).toBeTruthy();
+  });
+
+  it("filters insights by content in the title or description", () => {
+    setup();
+    openFilter();
+    setField(0, "content");
+    fireEvent.change(screen.getByLabelText("Content value"), {
+      target: { value: "caesar" },
+    });
+    expect(screen.queryByText("Fall of Constantinople")).toBeNull();
+    expect(screen.getByText("Assassination of Caesar")).toBeTruthy();
+    fireEvent.change(screen.getByLabelText("Operator"), {
+      target: { value: "notContains" },
+    });
+    expect(screen.getByText("Fall of Constantinople")).toBeTruthy();
+    expect(screen.queryByText("Assassination of Caesar")).toBeNull();
   });
 
   it("joins conditions with the and/or select, which applies to every row", () => {
@@ -777,10 +817,10 @@ describe("LibraryView filter builder", () => {
     setup("lens=highlights&insight=i-fall");
     openFilter();
     setField(0, "status");
-    fireEvent.click(screen.getByRole("button", { name: "Pending" }));
+    pick("Status search", "Pending");
     expect(screen.getByText("Nothing matches.")).toBeTruthy();
-    fireEvent.click(screen.getByRole("button", { name: "Pending" }));
-    fireEvent.click(screen.getByRole("button", { name: "Researched" }));
+    fireEvent.click(screen.getByRole("button", { name: "Remove Pending" }));
+    pick("Status search", "Researched");
     expect(screen.getByText(/Constantinople fell/)).toBeTruthy();
     expect(screen.queryByText(/Ides of March/)).toBeNull();
     expect(screen.getByText(/In Fall of Constantinople/)).toBeTruthy();

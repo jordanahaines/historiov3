@@ -139,7 +139,7 @@ export function FilterPopover({
           ref={dialogRef}
           role="dialog"
           aria-label={title}
-          className="bg-panel border-border-strong absolute top-full left-6 z-30 flex max-h-[70vh] w-[720px] max-w-[calc(100%-3rem)] flex-col gap-3 overflow-y-auto border p-4 shadow-[0_4px_16px_rgba(42,38,32,0.1)]"
+          className="bg-panel border-border-strong absolute top-full left-6 z-30 flex w-[720px] max-w-[calc(100%-3rem)] flex-col gap-3 border p-4 shadow-[0_4px_16px_rgba(42,38,32,0.1)]"
         >
           <p className="flex items-baseline gap-2 text-[13px]">
             <span className="font-semibold">{title}</span>

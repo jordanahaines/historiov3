@@ -2,6 +2,8 @@
 
 import { useState } from "react";
 
+import { FilterSelect } from "@/components/library/filter/FilterSelect";
+
 type YearInputProps = {
   label: string;
   /** Astronomical year (1 BC = 0), or null while empty. */
@@ -42,7 +44,7 @@ export function YearInput({ label, value, onChange }: YearInputProps) {
         onChange={(event) => emit(event.target.value, era)}
         className={`${field} w-20`}
       />
-      <select
+      <FilterSelect
         aria-label={`${label} era`}
         value={era}
         onChange={(event) => {
@@ -50,11 +52,11 @@ export function YearInput({ label, value, onChange }: YearInputProps) {
           setEra(next);
           emit(shown, next);
         }}
-        className={`${field} cursor-pointer`}
+        wrapperClassName="w-[72px]"
       >
         <option value="CE">CE</option>
         <option value="BC">BC</option>
-      </select>
+      </FilterSelect>
     </span>
   );
 }

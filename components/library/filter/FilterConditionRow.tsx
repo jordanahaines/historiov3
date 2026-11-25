@@ -1,5 +1,6 @@
 "use client";
 
+import { FilterSelect } from "@/components/library/filter/FilterSelect";
 import { FilterValueInput } from "@/components/library/filter/FilterValueInput";
 import type { SelectOption } from "@/components/library/filter/MultiSelect";
 import {
@@ -21,9 +22,6 @@ type FilterConditionRowProps = {
   onChange: (next: Condition) => void;
   onRemove: () => void;
 };
-
-const select =
-  "border-border-strong bg-paper focus:border-link h-[30px] cursor-pointer border px-2 text-[13px] focus:outline-none";
 
 /** One condition: join word, field, operator, value and a remove button. */
 export function FilterConditionRow({
@@ -69,43 +67,43 @@ export function FilterConditionRow({
         {index === 0 ? (
           <span className="text-ink-secondary">Where</span>
         ) : index === 1 ? (
-          <select
+          <FilterSelect
             aria-label="Join conditions with"
             value={join}
             onChange={(event) => onJoinChange(event.target.value as Join)}
-            className={`${select} w-full px-1`}
+            wrapperClassName="w-full"
           >
             <option value="and">and</option>
             <option value="or">or</option>
-          </select>
+          </FilterSelect>
         ) : (
           <span className="text-ink-secondary">{join}</span>
         )}
       </div>
-      <select
+      <FilterSelect
         aria-label="Field"
         value={field.id}
         onChange={(event) => changeField(event.target.value)}
-        className={`${select} w-36 shrink-0`}
+        wrapperClassName="w-[150px]"
       >
         {fields.map((f) => (
           <option key={f.id} value={f.id}>
             {f.label}
           </option>
         ))}
-      </select>
-      <select
+      </FilterSelect>
+      <FilterSelect
         aria-label="Operator"
         value={op.id}
         onChange={(event) => changeOp(event.target.value)}
-        className={`${select} w-28 shrink-0`}
+        wrapperClassName="w-[130px]"
       >
         {field.ops.map((o) => (
           <option key={o.id} value={o.id}>
             {o.label}
           </option>
         ))}
-      </select>
+      </FilterSelect>
       <div className="flex min-w-0 flex-1 items-center">
         <FilterValueInput
           kind={op.kind}
