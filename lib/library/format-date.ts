@@ -20,3 +20,11 @@ export function formatShortDate(iso: string | null): string {
   if (Number.isNaN(date.getTime())) return "–";
   return `${date.getUTCDate()} ${MONTHS[date.getUTCMonth()]} ${date.getUTCFullYear()}`;
 }
+
+/** "3/14/2026". UTC, so server and browser render the same text. */
+export function formatNumericDate(iso: string | null): string {
+  if (!iso) return "–";
+  const date = new Date(iso);
+  if (Number.isNaN(date.getTime())) return "–";
+  return `${date.getUTCMonth() + 1}/${date.getUTCDate()}/${date.getUTCFullYear()}`;
+}

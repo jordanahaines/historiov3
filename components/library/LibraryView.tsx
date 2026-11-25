@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 
 import { BooksTable } from "@/components/library/BooksTable";
+import { HighlightDrawer } from "@/components/library/HighlightDrawer";
 import { HighlightsTable } from "@/components/library/HighlightsTable";
 import { InsightDrawer } from "@/components/library/InsightDrawer";
 import { InsightsTable } from "@/components/library/InsightsTable";
@@ -54,10 +55,13 @@ function restoreView(search: string, data: LibraryData) {
     insightId: data.insights.some((i) => i.id === parsed.insightId)
       ? parsed.insightId
       : null,
-    // Includes hidden insights; the drawer only exists in the Insights lens.
+    // The id of an insight (Insights lens, hidden ones included) or of a
+    // highlight (Highlights lens); the Books lens has no drawer.
     drawerId:
-      parsed.lens === "insights" &&
-      data.insights.some((i) => i.id === parsed.drawerId)
+      (parsed.lens === "insights" &&
+        data.insights.some((i) => i.id === parsed.drawerId)) ||
+      (parsed.lens === "highlights" &&
+        data.highlights.some((h) => h.id === parsed.drawerId))
         ? parsed.drawerId
         : null,
   };
@@ -70,7 +74,7 @@ function firstWords(text: string, count = 6): string {
 
 /**
  * The Library. The server loads everything once; lens, search, scope, sort and
- * hidden-visibility and the open insight drawer are all state in this
+ * hidden-visibility and the open drawer are all state in this
  * component, so changing them never re-renders on the server. The URL mirrors
  * that state with the History API (see the effect below).
  */
@@ -163,7 +167,16 @@ export function LibraryView({
     () => Object.fromEntries(data.books.map((book) => [book.id, book])),
     [data.books],
   );
-  const drawerId = drawerInsight?.id ?? null;
+  const drawerHighlight =
+    lens === "highlights"
+      ? (data.highlights.find((h) => h.id === view.drawerId) ?? null)
+      : null;
+  const drawerHighlightInsights = useMemo(() => {
+    if (!drawerHighlight) return [];
+    const byId = new Map(data.insights.map((i) => [i.id, i]));
+    return drawerHighlight.insights.flatMap(({ id }) => byId.get(id) ?? []);
+  }, [drawerHighlight, data.insights]);
+  const drawerId = drawerInsight?.id ?? drawerHighlight?.id ?? null;
   // The row to focus after Escape or the close icon (not after an outside click).
   const returnFocusTo = useRef<string | null>(null);
 
@@ -183,9 +196,9 @@ export function LibraryView({
     const id = returnFocusTo.current;
     returnFocusTo.current = null;
     document
-      .querySelectorAll<HTMLElement>("[data-insight-row]")
+      .querySelectorAll<HTMLElement>("[data-drawer-row]")
       .forEach((row) => {
-        if (row.dataset.insightRow === id) row.focus();
+        if (row.dataset.drawerRow === id) row.focus();
       });
   }, [view.drawerId]);
 
@@ -208,7 +221,7 @@ export function LibraryView({
     }
     function onPointerDown(event: PointerEvent) {
       const target = event.target as Element | null;
-      if (target?.closest('[role="dialog"], [data-insight-row]')) return;
+      if (target?.closest('[role="dialog"], [data-drawer-row]')) return;
       setView((current) => ({ ...current, drawerId: null }));
     }
     document.addEventListener("keydown", onKeyDown);
@@ -330,6 +343,28 @@ export function LibraryView({
     }));
   }
 
+  function openInsightDrawer(insightId: string) {
+    setView((current) => ({
+      ...current,
+      lens: "insights",
+      bookId: null,
+      highlightId: null,
+      insightId: null,
+      drawerId: insightId,
+    }));
+  }
+
+  function showBookHighlights(bookId: string) {
+    setView((current) => ({
+      ...current,
+      lens: "highlights",
+      bookId,
+      highlightId: null,
+      insightId: null,
+      drawerId: null,
+    }));
+  }
+
   function showInsightHighlights(insightId: string) {
     setView((current) => ({
       ...current,
@@ -428,6 +463,8 @@ export function LibraryView({
         ) : lens === "highlights" ? (
           <HighlightsTable
             highlights={highlights}
+            selectedId={drawerId}
+            onOpen={openDrawer}
             onShowInsights={showHighlightInsights}
             getNoteImageUrl={actions.getNoteImageUrl}
           />
@@ -447,6 +484,17 @@ export function LibraryView({
           />
         )}
       </div>
+      {drawerHighlight ? (
+        <HighlightDrawer
+          highlight={drawerHighlight}
+          book={booksById[drawerHighlight.bookId]}
+          insights={drawerHighlightInsights}
+          onClose={() => closeDrawer(true)}
+          onOpenInsight={openInsightDrawer}
+          onOpenBook={showBookHighlights}
+          getNoteImageUrl={actions.getNoteImageUrl}
+        />
+      ) : null}
       {drawerInsight ? (
         <InsightDrawer
           insight={drawerInsight}

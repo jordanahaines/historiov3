@@ -29,7 +29,7 @@ export function InsightRow({
 
   return (
     <tr
-      data-insight-row={insight.id}
+      data-drawer-row={insight.id}
       tabIndex={0}
       aria-current={selected ? "true" : undefined}
       onClick={() => onOpen(insight.id)}

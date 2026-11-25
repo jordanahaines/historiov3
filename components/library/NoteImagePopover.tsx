@@ -7,6 +7,8 @@ import type { NoteUrlResult } from "@/components/library/library-actions";
 type NoteImagePopoverProps = {
   highlightId: string;
   page: number | null;
+  /** Show a text link ("Handwritten note · page 12") instead of the bare icon. */
+  label?: string;
   getNoteImageUrl: (highlightId: string) => Promise<NoteUrlResult>;
 };
 
@@ -24,6 +26,7 @@ type State =
 export function NoteImagePopover({
   highlightId,
   page,
+  label,
   getNoteImageUrl,
 }: NoteImagePopoverProps) {
   const [state, setState] = useState<State>({ kind: "closed" });
@@ -76,10 +79,14 @@ export function NoteImagePopover({
     >
       <button
         type="button"
-        aria-label="Show handwritten note"
+        aria-label={label ? undefined : "Show handwritten note"}
         aria-expanded={open}
         onClick={toggle}
-        className="text-ink-muted hover:text-ink focus-visible:outline-link ml-1 focus-visible:outline-2"
+        className={
+          label
+            ? "text-link focus-visible:outline-link flex items-center gap-1.5 text-[13px] focus-visible:outline-2"
+            : "text-ink-muted hover:text-ink focus-visible:outline-link ml-1 focus-visible:outline-2"
+        }
       >
         <svg
           aria-hidden="true"
@@ -93,6 +100,7 @@ export function NoteImagePopover({
           <circle cx="6" cy="7" r="1.2" />
           <path d="M3 12l3.5-3 2.5 2 2-1.5L13 12" />
         </svg>
+        {label}
       </button>
       {open ? (
         <span

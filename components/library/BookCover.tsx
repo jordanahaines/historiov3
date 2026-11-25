@@ -4,27 +4,33 @@ type BookCoverProps = {
   bookId: string;
   title: string;
   src: string | null;
-  /** "small" is a 16×22 thumbnail (no title text) for the insight drawer. */
-  size?: "default" | "small";
+  /** "medium" is 36×52 (highlight drawer); "small" is a 16×22 thumbnail with no title text (insight drawer). */
+  size?: "default" | "medium" | "small";
 };
 
-/** 44×64 (or 16×22 small): the catalog cover, or a muted block with the title in serif. */
+const BOX = {
+  default: { w: 44, h: 64, cls: "h-16 w-11", text: "text-[8px]" },
+  medium: { w: 36, h: 52, cls: "h-[52px] w-9", text: "text-[7px]" },
+  small: { w: 16, h: 22, cls: "h-[22px] w-4", text: "" },
+} as const;
+
+/** The catalog cover, or a muted block with the title in serif (44×64, 36×52 or 16×22). */
 export function BookCover({
   bookId,
   title,
   src,
   size = "default",
 }: BookCoverProps) {
-  const small = size === "small";
+  const box = BOX[size];
   if (src) {
     return (
       // eslint-disable-next-line @next/next/no-img-element -- catalog URLs come from arbitrary hosts
       <img
         src={src}
         alt=""
-        width={small ? 16 : 44}
-        height={small ? 22 : 64}
-        className={`${small ? "h-[22px] w-4" : "h-16 w-11"} shrink-0 object-cover`}
+        width={box.w}
+        height={box.h}
+        className={`${box.cls} shrink-0 object-cover`}
       />
     );
   }
@@ -33,12 +39,12 @@ export function BookCover({
       aria-hidden="true"
       style={{ backgroundColor: coverColor(bookId) }}
       className={
-        small
-          ? "h-[22px] w-4 shrink-0"
-          : "text-ink flex h-16 w-11 items-center justify-center overflow-hidden p-1 text-center font-serif text-[8px] leading-tight"
+        size === "small"
+          ? `${box.cls} shrink-0`
+          : `text-ink flex ${box.cls} shrink-0 items-center justify-center overflow-hidden p-1 text-center font-serif ${box.text} leading-tight`
       }
     >
-      {small ? null : title}
+      {size === "small" ? null : title}
     </div>
   );
 }

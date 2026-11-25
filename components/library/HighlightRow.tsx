@@ -6,6 +6,8 @@ import type { LibraryHighlight } from "@/lib/library/types";
 
 type HighlightRowProps = {
   highlight: LibraryHighlight;
+  selected?: boolean;
+  onOpen: (highlightId: string) => void;
   onShowInsights: (highlight: LibraryHighlight) => void;
   getNoteImageUrl: (highlightId: string) => Promise<NoteUrlResult>;
 };
@@ -14,6 +16,8 @@ const MAX_LINKS = 2;
 
 export function HighlightRow({
   highlight,
+  selected = false,
+  onOpen,
   onShowInsights,
   getNoteImageUrl,
 }: HighlightRowProps) {
@@ -22,7 +26,26 @@ export function HighlightRow({
   const more = highlight.insights.length - shown.length;
 
   return (
-    <tr className="border-border border-b align-top">
+    <tr
+      data-drawer-row={highlight.id}
+      tabIndex={0}
+      aria-current={selected ? "true" : undefined}
+      onClick={(event) => {
+        // Links and the note popover inside the row handle their own clicks.
+        if ((event.target as Element).closest("button, [role=dialog]")) return;
+        onOpen(highlight.id);
+      }}
+      onKeyDown={(event) => {
+        if (event.target !== event.currentTarget) return;
+        if (event.key === "Enter" || event.key === " ") {
+          event.preventDefault();
+          onOpen(highlight.id);
+        }
+      }}
+      className={`border-border focus-visible:outline-link cursor-pointer border-b align-top focus-visible:outline-2 ${
+        selected ? "bg-wash/50" : ""
+      }`}
+    >
       <td className="py-3 pr-4">
         <p className="font-serif text-base">
           {highlight.text}

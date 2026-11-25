@@ -482,3 +482,122 @@ describe("Insight drawer", () => {
     ).toBe("true");
   });
 });
+
+describe("Highlight drawer", () => {
+  const dialog = () => screen.queryByRole("dialog", { name: "Highlight" });
+  const rowOf = (text: RegExp) => {
+    const el = screen.getByText(text).closest("tr");
+    if (!el) throw new Error("no row");
+    return el;
+  };
+  const openFirst = () => fireEvent.click(rowOf(/Constantinople fell/));
+
+  it("opens on row click with the full content", () => {
+    setup("lens=highlights");
+    expect(dialog()).toBeNull();
+    openFirst();
+    const d = within(dialog()!);
+    expect(
+      d.getByText("Constantinople fell to the Ottomans in 1453."),
+    ).toBeTruthy();
+    expect(d.getByText("Captured 11/9/2026 · Researched")).toBeTruthy();
+    expect(d.getByText("Your note")).toBeTruthy();
+    expect(d.getByText("check the date")).toBeTruthy();
+    expect(
+      d.getByRole("button", { name: "Handwritten note · page 12" }),
+    ).toBeTruthy();
+    expect(d.getAllByText("The Silk Roads").length).toBeGreaterThan(0);
+    expect(d.getByText("Peter Frankopan · p. 12")).toBeTruthy();
+    expect(d.getByText("Became 1 insight")).toBeTruthy();
+    expect(d.getByText("Fall of Constantinople")).toBeTruthy();
+    expect(d.getByText("5/29/1453")).toBeTruthy();
+    expect(window.location.search).toBe("?lens=highlights&drawer=h-1");
+    expect(document.activeElement).toBe(dialog());
+  });
+
+  it("does not open from the insight links or the note popover", async () => {
+    setup("lens=highlights");
+    await act(async () => {
+      fireEvent.click(
+        screen.getByRole("button", { name: "Show handwritten note" }),
+      );
+    });
+    expect(dialog()).toBeNull();
+  });
+
+  it("opens from the keyboard, closes with Escape and returns focus to the row", () => {
+    setup("lens=highlights");
+    const row = rowOf(/Constantinople fell/);
+    fireEvent.keyDown(row, { key: "Enter" });
+    expect(dialog()).toBeTruthy();
+    fireEvent.keyDown(document, { key: "Escape" });
+    expect(dialog()).toBeNull();
+    expect(document.activeElement).toBe(row);
+  });
+
+  it("restores from the URL, ignores unknown ids and other lenses", () => {
+    setup("lens=highlights&drawer=h-3");
+    expect(within(dialog()!).getByText("Became 1 insight")).toBeTruthy();
+    cleanup();
+    setup("lens=highlights&drawer=nope");
+    expect(dialog()).toBeNull();
+    cleanup();
+    setup("lens=highlights&drawer=i-fall");
+    expect(dialog()).toBeNull();
+  });
+
+  it("shows no note section and an empty insights state when there is nothing", () => {
+    setup("lens=highlights&drawer=h-2");
+    const d = within(dialog()!);
+    expect(d.queryByText("Your note")).toBeNull();
+    expect(d.getByText("No insights yet")).toBeTruthy();
+  });
+
+  it("opens an insight's drawer from its row", () => {
+    setup("lens=highlights&drawer=h-1");
+    fireEvent.click(
+      within(dialog()!).getByRole("button", { name: /Fall of Constantinople/ }),
+    );
+    expect(screen.getByPlaceholderText("Search insights")).toBeTruthy();
+    expect(
+      screen.getByRole("heading", { name: "Fall of Constantinople" }),
+    ).toBeTruthy();
+    expect(window.location.search).toBe("?drawer=i-fall");
+  });
+
+  it("Open book scopes Highlights to the book and closes the drawer", () => {
+    setup("lens=highlights&drawer=h-1");
+    fireEvent.click(
+      within(dialog()!).getByRole("button", { name: "Open book" }),
+    );
+    expect(dialog()).toBeNull();
+    expect(window.location.search).toContain("book=book-silk");
+    expect(screen.queryByText(/Ides of March/)).toBeNull();
+  });
+
+  it("copies the quote", async () => {
+    const writeText = vi.fn().mockResolvedValue(undefined);
+    Object.defineProperty(navigator, "clipboard", {
+      value: { writeText },
+      configurable: true,
+    });
+    setup("lens=highlights&drawer=h-1");
+    await act(async () => {
+      fireEvent.click(
+        within(dialog()!).getByRole("button", { name: "Copy quote" }),
+      );
+    });
+    expect(writeText).toHaveBeenCalledWith(
+      "Constantinople fell to the Ottomans in 1453.",
+    );
+    expect(
+      within(dialog()!).getByRole("button", { name: "Copied" }),
+    ).toBeTruthy();
+  });
+
+  it("closes on a lens switch", () => {
+    setup("lens=highlights&drawer=h-1");
+    fireEvent.click(screen.getByRole("button", { name: /^Books/ }));
+    expect(dialog()).toBeNull();
+  });
+});
