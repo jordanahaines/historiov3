@@ -206,7 +206,11 @@ describe("LibraryView", () => {
       );
     });
     expect(actions.getNoteImageUrl).toHaveBeenCalledWith("h-1");
-    await waitFor(() => expect(screen.getByRole("img")).toBeTruthy());
+    await waitFor(() =>
+      expect(
+        screen.getByRole("img", { name: "Handwritten note" }),
+      ).toBeTruthy(),
+    );
   });
 
   it("shows an error in the popover when the url can't be loaded", async () => {

@@ -1,7 +1,7 @@
 import { NoteImagePopover } from "@/components/library/NoteImagePopover";
+import { StatusSteps } from "@/components/library/StatusSteps";
 import type { NoteUrlResult } from "@/components/library/library-actions";
 import { formatShortDate } from "@/lib/library/format-date";
-import { highlightStatusLabel } from "@/lib/library/status-label";
 import type { LibraryHighlight } from "@/lib/library/types";
 
 type HighlightRowProps = {
@@ -21,7 +21,6 @@ export function HighlightRow({
   onShowInsights,
   getNoteImageUrl,
 }: HighlightRowProps) {
-  const status = highlightStatusLabel(highlight.status);
   const shown = highlight.insights.slice(0, MAX_LINKS);
   const more = highlight.insights.length - shown.length;
 
@@ -90,10 +89,8 @@ export function HighlightRow({
           </div>
         )}
       </td>
-      <td
-        className={`py-3 pr-4 text-sm ${status.muted ? "text-ink-muted" : "text-ink-secondary"}`}
-      >
-        {status.label}
+      <td className="py-3 pr-4">
+        <StatusSteps status={highlight.status} />
       </td>
       <td className="py-3 text-sm whitespace-nowrap">
         {formatShortDate(highlight.capturedAt)}
