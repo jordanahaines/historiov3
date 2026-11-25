@@ -8,6 +8,13 @@ Try it: `pnpm book:cover <asin> [--title "…"] [--author "…"] [--out path]`
 (read-only; saves to `tmp/covers/`). The chain lives in
 `lib/books/cover-sources.ts`.
 
+## Implemented
+
+- Public `book-covers` bucket (migration `0006`, 5 MB limit, image types only).
+- Import hook: `saveNewHighlights` calls `ensureBookCover` (`lib/books/book-covers.ts`) when a book is newly created without a cover. Best effort, never throws, skipped on dry runs (`skipMediaUpload`).
+- Backfill for existing books: `pnpm books:backfill-covers [--dry-run] [--limit N] [--delay-ms 1500]`. Only touches books with a null cover; safe to re-run.
+- Hardening: 10 s fetch timeout, 5 MB cap, image MIME allowlist, title match needs full overlap of the shorter title's significant words, and the author must match when both sides have one.
+
 ## Results
 
 | Source                                                      | Hits  | Notes                                                                                                                             |

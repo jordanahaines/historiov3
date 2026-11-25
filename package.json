@@ -15,6 +15,7 @@
     "ingest:pdf": "tsx scripts/ingest-pdf-cli.mts",
     "pipeline:resume": "tsx scripts/resume-pipeline-cli.mts",
     "book:cover": "tsx scripts/fetch-cover-cli.mts",
+    "books:backfill-covers": "tsx scripts/backfill-covers-cli.mts",
     "format": "prettier --write .",
     "format:check": "prettier --check . '!**/*.md'",
     "db:generate": "drizzle-kit generate",

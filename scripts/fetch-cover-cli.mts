@@ -16,16 +16,9 @@ import { eq } from "drizzle-orm";
 
 import { db } from "@/lib/db";
 import { books } from "@/lib/db/schema";
-import { findBookCover } from "@/lib/books/cover-sources";
+import { COVER_EXTENSIONS, findBookCover } from "@/lib/books/cover-sources";
 
 import { log } from "./lib/log.mjs";
-
-const EXTENSIONS: Record<string, string> = {
-  "image/jpeg": "jpg",
-  "image/png": "png",
-  "image/gif": "gif",
-  "image/webp": "webp",
-};
 
 async function main() {
   const { positionals, values } = parseArgs({
@@ -43,19 +36,15 @@ async function main() {
     );
   }
 
-  let title = values.title;
-  let author = values.author;
+  const [book] = await db
+    .select({ title: books.title, author: books.author })
+    .from(books)
+    .where(eq(books.asin, asin))
+    .limit(1);
+  const title = values.title ?? book?.title;
+  const author = values.author ?? book?.author ?? undefined;
   if (!title) {
-    const [book] = await db
-      .select({ title: books.title, author: books.author })
-      .from(books)
-      .where(eq(books.asin, asin))
-      .limit(1);
-    if (!book) {
-      throw new Error(`ASIN ${asin} is not in the catalog; pass --title.`);
-    }
-    title = book.title;
-    author ??= book.author ?? undefined;
+    throw new Error(`ASIN ${asin} is not in the catalog; pass --title.`);
   }
 
   log(`Looking for a cover for "${title}" (${asin})…`);
@@ -66,7 +55,7 @@ async function main() {
     return;
   }
 
-  const extension = EXTENSIONS[cover.contentType.split(";")[0]] ?? "img";
+  const extension = COVER_EXTENSIONS[cover.contentType] ?? "img";
   const out = values.out ?? `tmp/covers/${asin}.${extension}`;
   await mkdir(dirname(out), { recursive: true });
   await writeFile(out, cover.bytes);
