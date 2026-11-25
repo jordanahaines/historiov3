@@ -9,6 +9,8 @@ import { createClient } from "@supabase/supabase-js";
 
 export const INGESTION_ATTACHMENTS_BUCKET = "ingestion-attachments";
 export const NOTE_SCANS_BUCKET = "note-scans";
+/** Public: covers are shared by all users and not secret. */
+export const BOOK_COVERS_BUCKET = "book-covers";
 
 function storageClient() {
   return createClient(
@@ -94,4 +96,21 @@ export async function createNoteScanSignedUrl(
     );
   }
   return data.signedUrl;
+}
+
+/** Stores a book cover at `<asin>.<ext>`; returns its public URL. */
+export async function uploadBookCover(
+  asin: string,
+  extension: string,
+  bytes: Uint8Array,
+  contentType: string,
+): Promise<string> {
+  const path = await upload(
+    BOOK_COVERS_BUCKET,
+    `${asin}.${extension}`,
+    bytes,
+    contentType,
+  );
+  return storageClient().storage.from(BOOK_COVERS_BUCKET).getPublicUrl(path)
+    .data.publicUrl;
 }

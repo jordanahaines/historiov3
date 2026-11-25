@@ -15,6 +15,7 @@ import {
   findExistingExternalIds,
   type NewHighlightInput,
 } from "@/lib/authz/highlights";
+import { ensureBookCover } from "@/lib/books/book-covers";
 import { uploadNoteScan } from "@/lib/storage/buckets";
 
 /**
@@ -78,6 +79,10 @@ export async function saveNewHighlights(
     author: parsed.book.author,
     coverImageUrl: input.coverImageUrl,
   });
+  // Best effort and never throws. Skipped on dry runs (it writes to Storage).
+  if (bookCreated && !book.coverImageUrl && !input.skipMediaUpload) {
+    await ensureBookCover(book);
+  }
   // Must exist before any highlight insert (highlights FK to user_books).
   await ensureUserBook(input.userId, book.id);
 
