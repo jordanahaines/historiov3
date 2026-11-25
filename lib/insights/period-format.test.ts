@@ -14,13 +14,13 @@ const p = (over: Partial<PeriodParts>): PeriodParts => ({
 });
 
 describe("formatPeriodParts", () => {
-  it("renders m/d/yyyy, m/yyyy and yyyy by stored precision", () => {
+  it("renders mm/dd/yyyy, mm/yyyy and yyyy by stored precision", () => {
     expect(
       formatPeriodParts(p({ startsYear: 1453, startsMonth: 5, startsDay: 29 })),
-    ).toEqual({ start: "5/29/1453", end: null });
+    ).toEqual({ start: "05/29/1453", end: null });
     expect(
       formatPeriodParts(p({ startsYear: 1453, startsMonth: 5 })).start,
-    ).toBe("5/1453");
+    ).toBe("05/1453");
     expect(formatPeriodParts(p({ startsYear: 751 })).start).toBe("751");
   });
 
@@ -29,7 +29,7 @@ describe("formatPeriodParts", () => {
     expect(
       formatPeriodParts(p({ startsYear: -43, startsMonth: 3, startsDay: 15 }))
         .start,
-    ).toBe("3/15/44 BC");
+    ).toBe("03/15/44 BC");
   });
 
   it("returns the end separately when there is one", () => {
@@ -51,7 +51,7 @@ describe("formatPeriodParts", () => {
           endsDay: 3,
         }),
       ),
-    ).toEqual({ start: "4/1453", end: "5/3/1453" });
+    ).toEqual({ start: "04/1453", end: "05/03/1453" });
   });
 
   it("treats a null end as no end", () => {

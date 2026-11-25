@@ -3,7 +3,9 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 
 import { BooksTable } from "@/components/library/BooksTable";
+import { HighlightDrawer } from "@/components/library/HighlightDrawer";
 import { HighlightsTable } from "@/components/library/HighlightsTable";
+import { InsightDrawer } from "@/components/library/InsightDrawer";
 import { InsightsTable } from "@/components/library/InsightsTable";
 import type { LibraryActions } from "@/components/library/library-actions";
 import { ScopeBar, type ScopeChip } from "@/components/library/ScopeBar";
@@ -53,6 +55,15 @@ function restoreView(search: string, data: LibraryData) {
     insightId: data.insights.some((i) => i.id === parsed.insightId)
       ? parsed.insightId
       : null,
+    // The id of an insight (Insights lens, hidden ones included) or of a
+    // highlight (Highlights lens); the Books lens has no drawer.
+    drawerId:
+      (parsed.lens === "insights" &&
+        data.insights.some((i) => i.id === parsed.drawerId)) ||
+      (parsed.lens === "highlights" &&
+        data.highlights.some((h) => h.id === parsed.drawerId))
+        ? parsed.drawerId
+        : null,
   };
 }
 
@@ -63,8 +74,9 @@ function firstWords(text: string, count = 6): string {
 
 /**
  * The Library. The server loads everything once; lens, search, scope, sort and
- * hidden-visibility are all state in this component, so changing them never
- * re-renders on the server. The URL mirrors that state via replaceState.
+ * hidden-visibility and the open drawer are all state in this
+ * component, so changing them never re-renders on the server. The URL mirrors
+ * that state with the History API (see the effect below).
  */
 export function LibraryView({
   data: initialData,
@@ -92,9 +104,10 @@ export function LibraryView({
   const [direction, setDirection] = useState<SortDirection>("asc");
   const [errors, setErrors] = useState<Record<string, string>>({});
 
-  // Mirror state to the URL without navigating. Changing section or scope
-  // pushes a history entry, so Back returns to the previous view; typing a
-  // search or toggling hidden replaces the current one.
+  // Mirror state to the URL without navigating. Changing section or scope, or
+  // opening the drawer from closed, pushes a history entry, so Back returns to
+  // the previous view; typing a search, toggling hidden, switching the drawer
+  // to another insight or closing it replaces the current one.
   useEffect(() => {
     const previous = previousView.current;
     previousView.current = view;
@@ -105,7 +118,8 @@ export function LibraryView({
       previous.lens !== view.lens ||
       previous.bookId !== view.bookId ||
       previous.highlightId !== view.highlightId ||
-      previous.insightId !== view.insightId;
+      previous.insightId !== view.insightId ||
+      (!previous.drawerId && !!view.drawerId);
     if (navigated) window.history.pushState(null, "", url);
     else window.history.replaceState(window.history.state, "", url);
   }, [view]);
@@ -137,6 +151,86 @@ export function LibraryView({
     }),
     [scopeBook, scopeHighlight, scopeInsight, lens],
   );
+
+  // Read live from data (not a snapshot) so hide/restore updates it at once;
+  // not filtered, so a hidden insight stays open while "Show hidden" is off.
+  const drawerInsight =
+    lens === "insights"
+      ? (data.insights.find((insight) => insight.id === view.drawerId) ?? null)
+      : null;
+  const drawerHighlights = useMemo(() => {
+    if (!drawerInsight) return [];
+    const byId = new Map(data.highlights.map((h) => [h.id, h]));
+    return drawerInsight.highlightIds.flatMap((id) => byId.get(id) ?? []);
+  }, [drawerInsight, data.highlights]);
+  const booksById = useMemo(
+    () => Object.fromEntries(data.books.map((book) => [book.id, book])),
+    [data.books],
+  );
+  const drawerHighlight =
+    lens === "highlights"
+      ? (data.highlights.find((h) => h.id === view.drawerId) ?? null)
+      : null;
+  const drawerHighlightInsights = useMemo(() => {
+    if (!drawerHighlight) return [];
+    const byId = new Map(data.insights.map((i) => [i.id, i]));
+    return drawerHighlight.insights.flatMap(({ id }) => byId.get(id) ?? []);
+  }, [drawerHighlight, data.insights]);
+  const drawerId = drawerInsight?.id ?? drawerHighlight?.id ?? null;
+  // The row to focus after Escape or the close icon (not after an outside click).
+  const returnFocusTo = useRef<string | null>(null);
+
+  function openDrawer(id: string) {
+    setView((current) =>
+      current.drawerId === id ? current : { ...current, drawerId: id },
+    );
+  }
+
+  function closeDrawer(restoreFocus: boolean) {
+    if (restoreFocus) returnFocusTo.current = drawerId;
+    setView((current) => ({ ...current, drawerId: null }));
+  }
+
+  useEffect(() => {
+    if (view.drawerId || !returnFocusTo.current) return;
+    const id = returnFocusTo.current;
+    returnFocusTo.current = null;
+    document
+      .querySelectorAll<HTMLElement>("[data-drawer-row]")
+      .forEach((row) => {
+        if (row.dataset.drawerRow === id) row.focus();
+      });
+  }, [view.drawerId]);
+
+  // Escape, or a pointer-down outside the drawer that is not on an insight row
+  // (rows open or switch the drawer themselves), closes it.
+  useEffect(() => {
+    if (!drawerId) return;
+    const open = drawerId;
+    function onKeyDown(event: KeyboardEvent) {
+      if (event.key !== "Escape" || event.defaultPrevented) return;
+      // Escape in a field (the search box) belongs to that field.
+      const target = event.target;
+      if (
+        target instanceof Element &&
+        target.closest("input, textarea, select, [contenteditable]")
+      )
+        return;
+      returnFocusTo.current = open;
+      setView((current) => ({ ...current, drawerId: null }));
+    }
+    function onPointerDown(event: PointerEvent) {
+      const target = event.target as Element | null;
+      if (target?.closest('[role="dialog"], [data-drawer-row]')) return;
+      setView((current) => ({ ...current, drawerId: null }));
+    }
+    document.addEventListener("keydown", onKeyDown);
+    document.addEventListener("pointerdown", onPointerDown);
+    return () => {
+      document.removeEventListener("keydown", onKeyDown);
+      document.removeEventListener("pointerdown", onPointerDown);
+    };
+  }, [drawerId]);
 
   const counts = sectionCounts(data);
   const hidden = hiddenCount(data.insights);
@@ -192,6 +286,7 @@ export function LibraryView({
     setView((current) => ({
       ...current,
       lens: next,
+      drawerId: null,
       bookId: null,
       highlightId: null,
       insightId: null,
@@ -241,9 +336,32 @@ export function LibraryView({
     setView((current) => ({
       ...current,
       lens: "insights",
+      drawerId: null,
       bookId: null,
       highlightId: highlight.id,
       insightId: null,
+    }));
+  }
+
+  function openInsightDrawer(insightId: string) {
+    setView((current) => ({
+      ...current,
+      lens: "insights",
+      bookId: null,
+      highlightId: null,
+      insightId: null,
+      drawerId: insightId,
+    }));
+  }
+
+  function showBookHighlights(bookId: string) {
+    setView((current) => ({
+      ...current,
+      lens: "highlights",
+      bookId,
+      highlightId: null,
+      insightId: null,
+      drawerId: null,
     }));
   }
 
@@ -251,6 +369,7 @@ export function LibraryView({
     setView((current) => ({
       ...current,
       lens: "highlights",
+      drawerId: null,
       bookId: null,
       highlightId: null,
       insightId,
@@ -324,6 +443,7 @@ export function LibraryView({
               setView((current) => ({
                 ...current,
                 lens: "highlights",
+                drawerId: null,
                 bookId,
                 highlightId: null,
                 insightId: null,
@@ -333,6 +453,7 @@ export function LibraryView({
               setView((current) => ({
                 ...current,
                 lens: "insights",
+                drawerId: null,
                 bookId,
                 highlightId: null,
                 insightId: null,
@@ -342,6 +463,8 @@ export function LibraryView({
         ) : lens === "highlights" ? (
           <HighlightsTable
             highlights={highlights}
+            selectedId={drawerId}
+            onOpen={openDrawer}
             onShowInsights={showHighlightInsights}
             getNoteImageUrl={actions.getNoteImageUrl}
           />
@@ -350,6 +473,8 @@ export function LibraryView({
             insights={insights}
             direction={direction}
             errors={errors}
+            selectedId={drawerId}
+            onOpen={openDrawer}
             onToggleSort={() =>
               setDirection((current) => (current === "asc" ? "desc" : "asc"))
             }
@@ -359,6 +484,29 @@ export function LibraryView({
           />
         )}
       </div>
+      {drawerHighlight ? (
+        <HighlightDrawer
+          highlight={drawerHighlight}
+          book={booksById[drawerHighlight.bookId]}
+          insights={drawerHighlightInsights}
+          onClose={() => closeDrawer(true)}
+          onOpenInsight={openInsightDrawer}
+          onOpenBook={showBookHighlights}
+          getNoteImageUrl={actions.getNoteImageUrl}
+        />
+      ) : null}
+      {drawerInsight ? (
+        <InsightDrawer
+          insight={drawerInsight}
+          highlights={drawerHighlights}
+          books={booksById}
+          error={errors[drawerInsight.id]}
+          onClose={() => closeDrawer(true)}
+          onHide={(id) => void changeStatus(id, "hidden")}
+          onRestore={(id) => void changeStatus(id, "published")}
+          getNoteImageUrl={actions.getNoteImageUrl}
+        />
+      ) : null}
     </div>
   );
 }

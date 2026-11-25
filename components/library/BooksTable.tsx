@@ -1,7 +1,7 @@
 import { BookCover } from "@/components/library/BookCover";
 import { RelationTile } from "@/components/library/RelationTile";
 import { TableHeader } from "@/components/library/TableHeader";
-import { formatShortDate } from "@/lib/library/format-date";
+import { formatDate } from "@/lib/library/format-date";
 import type { LibraryBook } from "@/lib/library/types";
 
 type BooksTableProps = {
@@ -19,8 +19,7 @@ export function BooksTable({
     <table className="w-full table-fixed border-collapse">
       <TableHeader
         columns={[
-          { key: "cover", label: "Cover", className: "w-[10%]" },
-          { key: "book", label: "Book", className: "w-[34%]" },
+          { key: "book", label: "Book", className: "w-[44%]" },
           { key: "last", label: "Last highlight", className: "w-[18%]" },
           { key: "relations", label: "" },
         ]}
@@ -29,20 +28,24 @@ export function BooksTable({
         {books.map((book) => (
           <tr key={book.id} className="border-border border-b align-middle">
             <td className="py-3 pr-4">
-              <BookCover
-                bookId={book.id}
-                title={book.title}
-                src={book.coverImageUrl}
-              />
-            </td>
-            <td className="py-3 pr-4">
-              <div className="font-serif text-base">{book.title}</div>
-              {book.author ? (
-                <div className="text-ink-secondary text-xs">{book.author}</div>
-              ) : null}
+              <div className="flex items-center gap-3">
+                <BookCover
+                  bookId={book.id}
+                  title={book.title}
+                  src={book.coverImageUrl}
+                />
+                <div className="min-w-0">
+                  <div className="font-serif text-base">{book.title}</div>
+                  {book.author ? (
+                    <div className="text-ink-secondary text-xs">
+                      {book.author}
+                    </div>
+                  ) : null}
+                </div>
+              </div>
             </td>
             <td className="py-3 pr-4 text-sm">
-              {formatShortDate(book.lastHighlightAt)}
+              {formatDate(book.lastHighlightAt)}
             </td>
             <td className="py-3">
               <div className="flex justify-evenly">

@@ -18,6 +18,10 @@ notion_database_url: https://app.notion.com/p/40d2dd9d3fb7805ca0ebdc145ab228de
 
 Issues live in the **Historio Product Roadmap** Notion database (shared with the v1 repo — v3 items are distinguished by their title/epic, e.g. an "E1" parent). The `em-*` skills read this section. Access via the Notion MCP tools; always fetch the data source first to get the current schema. Do not create GitHub Issues; PRs live on GitHub (`jordanahaines/historiov3`). Status/Priority/Effort/Category properties and workflow are the same as the v1 repo: `Backlog` = stub, `Planned` = specified, `In progress` = building (PR URL at top of the page body), `Completed` = merged.
 
+## Design file
+
+The Pencil design file lives **outside this repo** (it caused constant merge conflicts): `historiov3.pen` in a local `designs-pen/` folder (by default `~/Documents/designs-pen/historiov3.pen`; the location is per-machine, so ask the user if it isn't there). It is not tracked or copied here; open it by absolute path with the Pencil MCP tools (`.pen` files are encrypted, so never Read/Grep them) and add the folder as a working directory if needed. Visual guidelines stay in `design.md`. When a skill (e.g. `em-design`) looks for `design.pen` in the project root, use this file instead. Frame and component names in `design.md` refer to it.
+
 ## Risky actions
 
 - **Migrations:** fine to generate and apply (`pnpm db:generate`, `pnpm db:migrate`) without asking, including against the shared Supabase project. Everything stays in the `v3` schema.
