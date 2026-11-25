@@ -20,7 +20,7 @@ Issues live in the **Historio Product Roadmap** Notion database (shared with the
 
 ## Design file
 
-The Pencil design file lives **outside this repo** (it caused constant merge conflicts): `/Users/jordan/Documents/designs-pen/historiov3.pen`. It is not tracked or copied here; open it by that absolute path with the Pencil MCP tools (`.pen` files are encrypted, so never Read/Grep them) and add `/Users/jordan/Documents/designs-pen` as a working directory if needed. Visual guidelines stay in `design.md`. When a skill (e.g. `em-design`) looks for `design.pen` in the project root, use this path instead. Frame and component names in `design.md` refer to this file.
+The Pencil design file lives **outside this repo** (it caused constant merge conflicts): `historiov3.pen` in a local `designs-pen/` folder (by default `~/Documents/designs-pen/historiov3.pen`; the location is per-machine, so ask the user if it isn't there). It is not tracked or copied here; open it by absolute path with the Pencil MCP tools (`.pen` files are encrypted, so never Read/Grep them) and add the folder as a working directory if needed. Visual guidelines stay in `design.md`. When a skill (e.g. `em-design`) looks for `design.pen` in the project root, use this file instead. Frame and component names in `design.md` refer to it.
 
 ## Risky actions
 

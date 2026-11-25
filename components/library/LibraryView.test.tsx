@@ -243,8 +243,7 @@ describe("Insight drawer", () => {
       d.getByRole("heading", { name: "Fall of Constantinople" }),
     ).toBeTruthy();
     expect(d.getByText("event")).toBeTruthy();
-    expect(d.getByText("5/29/1453")).toBeTruthy();
-    expect(d.getByText("Istanbul")).toBeTruthy();
+    expect(d.getByText("5/29/1453 · Istanbul")).toBeTruthy();
     expect(d.getByText("Also: Conquest of Constantinople")).toBeTruthy();
     expect(
       d.getByText("The Ottoman capture of the Byzantine capital."),
@@ -253,7 +252,6 @@ describe("Insight drawer", () => {
     expect(
       d.getByText("Constantinople fell to the Ottomans in 1453."),
     ).toBeTruthy();
-    expect(d.getByText("The Silk Roads · p. 12")).toBeTruthy();
     expect(d.getByText("check the date")).toBeTruthy();
     expect(
       d.getByRole("button", { name: "Show handwritten note" }),
@@ -362,8 +360,9 @@ describe("Insight drawer", () => {
     setup("drawer=i-silk");
     const d = within(dialog()!);
     expect(d.getByText("Hidden")).toBeTruthy();
-    expect(d.getByRole("button", { name: "Restore" })).toBeTruthy();
-    expect(d.queryByRole("button", { name: "Hide insight" })).toBeNull();
+    expect(
+      d.getByRole("switch", { name: "Visible" }).getAttribute("aria-checked"),
+    ).toBe("false");
     cleanup();
     setup("drawer=nope");
     expect(dialog()).toBeNull();
@@ -377,7 +376,7 @@ describe("Insight drawer", () => {
     fireEvent.change(screen.getByPlaceholderText("Search insights"), {
       target: { value: "fall" },
     });
-    fireEvent.click(screen.getByRole("switch"));
+    fireEvent.click(screen.getByRole("switch", { name: /Show hidden/ }));
     expect(dialog()).toBeTruthy();
     expect(window.location.search).toContain("drawer=i-fall");
     expect(window.location.search).toContain("q=fall");
@@ -392,21 +391,48 @@ describe("Insight drawer", () => {
       d.getByText("Silk travelled west along the oldest roads."),
     ).toBeTruthy();
     expect(d.queryByText("Istanbul")).toBeNull();
-    expect(d.getByText("The Silk Roads · p. 30")).toBeTruthy();
     expect(
       d.queryByRole("button", { name: "Show handwritten note" }),
     ).toBeNull();
   });
 
-  it("collapses to two highlights and expands the rest in place", () => {
+  it("lists every highlight in a scrollable area", () => {
     const data = makeLibrary();
     data.insights[0]!.highlightIds = ["h-1", "h-2", "h-3"];
     setup("drawer=i-fall", makeActions(), data);
     const d = within(dialog()!);
-    expect(d.queryByText(/Ides of March/)).toBeNull();
-    fireEvent.click(d.getByRole("button", { name: "1 more highlight" }));
+    expect(d.getAllByRole("listitem")).toHaveLength(3);
     expect(d.getByText(/Ides of March/)).toBeTruthy();
-    expect(d.queryByRole("button", { name: /more highlight/ })).toBeNull();
+  });
+
+  it("keeps the drawer open when Escape is pressed in the search field", () => {
+    setup("drawer=i-fall");
+    const search = screen.getByPlaceholderText("Search insights");
+    search.focus();
+    fireEvent.keyDown(search, { key: "Escape" });
+    expect(dialog()).toBeTruthy();
+  });
+
+  it("closes only the note popover on Escape, not the drawer", async () => {
+    setup("drawer=i-fall");
+    await act(async () => {
+      fireEvent.click(
+        screen.getByRole("button", { name: "Show handwritten note" }),
+      );
+    });
+    expect(
+      screen.getByRole("dialog", { name: "Handwritten note" }),
+    ).toBeTruthy();
+    fireEvent.keyDown(
+      screen.getByRole("button", { name: "Show handwritten note" }),
+      {
+        key: "Escape",
+      },
+    );
+    expect(
+      screen.queryByRole("dialog", { name: "Handwritten note" }),
+    ).toBeNull();
+    expect(dialog()).toBeTruthy();
   });
 
   it("lists only highlights in the library", () => {
@@ -416,23 +442,25 @@ describe("Insight drawer", () => {
     expect(within(dialog()!).getAllByRole("listitem")).toHaveLength(1);
   });
 
-  it("hides from the drawer, keeping it open and removing the row", async () => {
+  it("hides from the drawer with the Visible switch, keeping it open and removing the row", async () => {
     const actions = setup("drawer=i-fall");
+    const toggle = () =>
+      within(dialog()!).getByRole("switch", { name: "Visible" });
+    expect(toggle().getAttribute("aria-checked")).toBe("true");
     await act(async () => {
-      fireEvent.click(screen.getByRole("button", { name: "Hide insight" }));
+      fireEvent.click(toggle());
     });
     expect(actions.hideInsight).toHaveBeenCalledTimes(1);
     expect(actions.hideInsight).toHaveBeenCalledWith("i-fall");
-    const d = within(dialog()!);
-    expect(d.getByText("Hidden")).toBeTruthy();
-    expect(d.getByRole("button", { name: "Restore" })).toBeTruthy();
+    expect(within(dialog()!).getByText("Hidden")).toBeTruthy();
+    expect(toggle().getAttribute("aria-checked")).toBe("false");
     expect(screen.getAllByText("Fall of Constantinople")).toHaveLength(1);
 
     await act(async () => {
-      fireEvent.click(d.getByRole("button", { name: "Restore" }));
+      fireEvent.click(toggle());
     });
     expect(actions.restoreInsight).toHaveBeenCalledWith("i-fall");
-    expect(d.getByRole("button", { name: "Hide insight" })).toBeTruthy();
+    expect(toggle().getAttribute("aria-checked")).toBe("true");
   });
 
   it("rolls back a failed hide and shows the error in the drawer", async () => {
@@ -443,10 +471,14 @@ describe("Insight drawer", () => {
       }),
     );
     await act(async () => {
-      fireEvent.click(screen.getByRole("button", { name: "Hide insight" }));
+      fireEvent.click(
+        within(dialog()!).getByRole("switch", { name: "Visible" }),
+      );
     });
     const d = within(dialog()!);
     expect(d.getByRole("alert").textContent).toBe("Nope.");
-    expect(d.getByRole("button", { name: "Hide insight" })).toBeTruthy();
+    expect(
+      d.getByRole("switch", { name: "Visible" }).getAttribute("aria-checked"),
+    ).toBe("true");
   });
 });

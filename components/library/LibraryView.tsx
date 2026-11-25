@@ -159,8 +159,8 @@ export function LibraryView({
     const byId = new Map(data.highlights.map((h) => [h.id, h]));
     return drawerInsight.highlightIds.flatMap((id) => byId.get(id) ?? []);
   }, [drawerInsight, data.highlights]);
-  const bookTitles = useMemo(
-    () => Object.fromEntries(data.books.map((book) => [book.id, book.title])),
+  const booksById = useMemo(
+    () => Object.fromEntries(data.books.map((book) => [book.id, book])),
     [data.books],
   );
   const drawerId = drawerInsight?.id ?? null;
@@ -195,7 +195,14 @@ export function LibraryView({
     if (!drawerId) return;
     const open = drawerId;
     function onKeyDown(event: KeyboardEvent) {
-      if (event.key !== "Escape") return;
+      if (event.key !== "Escape" || event.defaultPrevented) return;
+      // Escape in a field (the search box) belongs to that field.
+      const target = event.target;
+      if (
+        target instanceof Element &&
+        target.closest("input, textarea, select, [contenteditable]")
+      )
+        return;
       returnFocusTo.current = open;
       setView((current) => ({ ...current, drawerId: null }));
     }
@@ -444,7 +451,7 @@ export function LibraryView({
         <InsightDrawer
           insight={drawerInsight}
           highlights={drawerHighlights}
-          bookTitles={bookTitles}
+          books={booksById}
           error={errors[drawerInsight.id]}
           onClose={() => closeDrawer(true)}
           onHide={(id) => void changeStatus(id, "hidden")}
