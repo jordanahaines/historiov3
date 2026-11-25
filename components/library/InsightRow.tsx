@@ -7,6 +7,8 @@ import type { LibraryInsight } from "@/lib/library/types";
 type InsightRowProps = {
   insight: LibraryInsight;
   error?: string;
+  selected?: boolean;
+  onOpen: (insightId: string) => void;
   onShowHighlights: (insightId: string) => void;
   onHide: (id: string) => void;
   onRestore: (id: string) => void;
@@ -15,6 +17,8 @@ type InsightRowProps = {
 export function InsightRow({
   insight,
   error,
+  selected = false,
+  onOpen,
   onShowHighlights,
   onHide,
   onRestore,
@@ -24,7 +28,23 @@ export function InsightRow({
   const muted = hidden ? "text-ink-muted" : "";
 
   return (
-    <tr className={`group border-border border-b align-top ${muted}`}>
+    <tr
+      data-insight-row={insight.id}
+      tabIndex={0}
+      aria-current={selected ? "true" : undefined}
+      onClick={() => onOpen(insight.id)}
+      onKeyDown={(event) => {
+        // Only keys pressed on the row itself; buttons inside handle their own.
+        if (event.target !== event.currentTarget) return;
+        if (event.key === "Enter" || event.key === " ") {
+          event.preventDefault();
+          onOpen(insight.id);
+        }
+      }}
+      className={`group border-border focus-visible:outline-link cursor-pointer border-b align-top focus-visible:outline-2 ${
+        selected ? "bg-wash/50" : ""
+      } ${muted}`}
+    >
       <td className="py-3 pr-4">
         <div className="flex gap-2">
           <TypeDot type={insight.type} faded={hidden} />
@@ -63,7 +83,10 @@ export function InsightRow({
             type="button"
             aria-label={`Show highlights for ${insight.title}: ${insight.highlightCount}`}
             title={`${insight.highlightCount} ${insight.highlightCount === 1 ? "highlight" : "highlights"}`}
-            onClick={() => onShowHighlights(insight.id)}
+            onClick={(event) => {
+              event.stopPropagation();
+              onShowHighlights(insight.id);
+            }}
             className="bg-wash text-ink-secondary hover:text-ink focus-visible:outline-link inline-flex items-center gap-1 px-1.5 py-0.5 text-xs focus-visible:outline-2"
           >
             <EntityIcon kind="highlight" size="small" />
@@ -74,7 +97,10 @@ export function InsightRow({
               type="button"
               aria-label={`Restore ${insight.title}`}
               title="Restore"
-              onClick={() => onRestore(insight.id)}
+              onClick={(event) => {
+                event.stopPropagation();
+                onRestore(insight.id);
+              }}
               className="text-link focus-visible:outline-link focus-visible:outline-2"
             >
               <VisibilityIcon visible />
@@ -84,7 +110,10 @@ export function InsightRow({
               type="button"
               aria-label={`Hide ${insight.title}`}
               title="Hide"
-              onClick={() => onHide(insight.id)}
+              onClick={(event) => {
+                event.stopPropagation();
+                onHide(insight.id);
+              }}
               className="text-ink-secondary hover:text-ink focus-visible:outline-link opacity-0 group-focus-within:opacity-100 group-hover:opacity-100 focus-visible:opacity-100 focus-visible:outline-2"
             >
               <VisibilityIcon visible={false} />

@@ -138,6 +138,7 @@ describe("view state in the URL", () => {
       bookId: "book-silk",
       highlightId: null,
       insightId: "i-fall",
+      drawerId: null,
       showHidden: true,
     };
     expect(parseViewState(serializeViewState(state))).toEqual(state);
@@ -160,6 +161,7 @@ describe("view state in the URL", () => {
         bookId: null,
         highlightId: null,
         insightId: null,
+        drawerId: null,
         showHidden: false,
       }),
     ).toBe("");

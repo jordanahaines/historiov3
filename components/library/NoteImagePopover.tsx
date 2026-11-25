@@ -67,6 +67,8 @@ export function NoteImagePopover({
       className="relative inline-block align-baseline"
       onKeyDown={(event) => {
         if (event.key === "Escape" && open) {
+          // Close only the popover, not a drawer around it.
+          event.stopPropagation();
           requestId.current++;
           setState({ kind: "closed" });
         }

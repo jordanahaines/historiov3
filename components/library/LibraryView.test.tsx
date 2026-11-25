@@ -6,6 +6,7 @@ import {
   render,
   screen,
   waitFor,
+  within,
 } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
@@ -221,5 +222,231 @@ describe("LibraryView", () => {
       );
     });
     expect(screen.getByText("Couldn't load the note image.")).toBeTruthy();
+  });
+});
+
+describe("Insight drawer", () => {
+  function row(title: string) {
+    const el = screen.getByText(title).closest("tr");
+    if (!el) throw new Error(`no row for ${title}`);
+    return el;
+  }
+  const dialog = () => screen.queryByRole("dialog", { name: /.+/ });
+  const openFall = () => fireEvent.click(row("Fall of Constantinople"));
+
+  it("opens on row click with the full content", () => {
+    setup();
+    expect(dialog()).toBeNull();
+    openFall();
+    const d = within(dialog()!);
+    expect(
+      d.getByRole("heading", { name: "Fall of Constantinople" }),
+    ).toBeTruthy();
+    expect(d.getByText("event")).toBeTruthy();
+    expect(d.getByText("5/29/1453")).toBeTruthy();
+    expect(d.getByText("Istanbul")).toBeTruthy();
+    expect(d.getByText("Also: Conquest of Constantinople")).toBeTruthy();
+    expect(
+      d.getByText("The Ottoman capture of the Byzantine capital."),
+    ).toBeTruthy();
+    expect(d.getByText("From your reading")).toBeTruthy();
+    expect(
+      d.getByText("Constantinople fell to the Ottomans in 1453."),
+    ).toBeTruthy();
+    expect(d.getByText("The Silk Roads · p. 12")).toBeTruthy();
+    expect(d.getByText("check the date")).toBeTruthy();
+    expect(
+      d.getByRole("button", { name: "Show handwritten note" }),
+    ).toBeTruthy();
+    expect(d.queryByRole("button", { name: /Show on map/ })).toBeNull();
+    expect(window.location.search).toBe("?drawer=i-fall");
+    expect(document.activeElement).toBe(dialog());
+  });
+
+  it("does not open from the badge, hide or restore buttons", async () => {
+    setup("hidden=1");
+    fireEvent.click(
+      screen.getByRole("button", {
+        name: "Show highlights for Assassination of Caesar: 1",
+      }),
+    );
+    expect(dialog()).toBeNull();
+    cleanup();
+    setup("hidden=1");
+    await act(async () => {
+      fireEvent.click(
+        screen.getByRole("button", { name: "Hide Assassination of Caesar" }),
+      );
+    });
+    expect(dialog()).toBeNull();
+    await act(async () => {
+      fireEvent.click(screen.getByRole("button", { name: /^Restore Silk/ }));
+    });
+    expect(dialog()).toBeNull();
+  });
+
+  it("opens from the keyboard with Enter or Space on a focused row", () => {
+    setup();
+    const r = row("Fall of Constantinople");
+    expect(r.tabIndex).toBe(0);
+    fireEvent.keyDown(r, { key: "Enter" });
+    expect(dialog()).toBeTruthy();
+    cleanup();
+    setup();
+    fireEvent.keyDown(row("Fall of Constantinople"), { key: " " });
+    expect(dialog()).toBeTruthy();
+  });
+
+  it("switches to another row without closing", () => {
+    setup();
+    openFall();
+    fireEvent.click(row("Assassination of Caesar"));
+    expect(
+      within(dialog()!).getByRole("heading", {
+        name: "Assassination of Caesar",
+      }),
+    ).toBeTruthy();
+    expect(window.location.search).toBe("?drawer=i-ides");
+  });
+
+  it("closes with the close icon, Escape, an outside click and a lens switch", () => {
+    setup();
+    openFall();
+    fireEvent.click(screen.getByRole("button", { name: "Close" }));
+    expect(dialog()).toBeNull();
+    expect(document.activeElement).toBe(row("Fall of Constantinople"));
+    expect(window.location.search).toBe("");
+
+    openFall();
+    fireEvent.keyDown(document, { key: "Escape" });
+    expect(dialog()).toBeNull();
+    expect(document.activeElement).toBe(row("Fall of Constantinople"));
+
+    openFall();
+    fireEvent.pointerDown(dialog()!);
+    expect(dialog()).toBeTruthy();
+    fireEvent.pointerDown(row("Assassination of Caesar"));
+    expect(dialog()).toBeTruthy();
+    fireEvent.pointerDown(document.body);
+    expect(dialog()).toBeNull();
+
+    openFall();
+    fireEvent.click(screen.getByRole("button", { name: /^Books/ }));
+    expect(dialog()).toBeNull();
+    expect(window.location.search).not.toContain("drawer");
+  });
+
+  it("pushes on open, replaces on switch and close, and restores on popstate", () => {
+    setup();
+    const start = window.history.length;
+    openFall();
+    expect(window.history.length).toBe(start + 1);
+    fireEvent.click(row("Assassination of Caesar"));
+    expect(window.history.length).toBe(start + 1);
+    fireEvent.click(screen.getByRole("button", { name: "Close" }));
+    expect(window.history.length).toBe(start + 1);
+
+    act(() => {
+      window.history.replaceState(null, "", "/library?drawer=i-fall");
+      window.dispatchEvent(new PopStateEvent("popstate"));
+    });
+    expect(dialog()).toBeTruthy();
+    act(() => {
+      window.history.replaceState(null, "", "/library");
+      window.dispatchEvent(new PopStateEvent("popstate"));
+    });
+    expect(dialog()).toBeNull();
+  });
+
+  it("opens from the URL, including a hidden insight, and ignores bad ids and other lenses", () => {
+    setup("drawer=i-silk");
+    const d = within(dialog()!);
+    expect(d.getByText("Hidden")).toBeTruthy();
+    expect(d.getByRole("button", { name: "Restore" })).toBeTruthy();
+    expect(d.queryByRole("button", { name: "Hide insight" })).toBeNull();
+    cleanup();
+    setup("drawer=nope");
+    expect(dialog()).toBeNull();
+    cleanup();
+    setup("lens=books&drawer=i-fall");
+    expect(dialog()).toBeNull();
+  });
+
+  it("keeps the drawer through search and Show hidden changes", () => {
+    setup("drawer=i-fall");
+    fireEvent.change(screen.getByPlaceholderText("Search insights"), {
+      target: { value: "fall" },
+    });
+    fireEvent.click(screen.getByRole("switch"));
+    expect(dialog()).toBeTruthy();
+    expect(window.location.search).toContain("drawer=i-fall");
+    expect(window.location.search).toContain("q=fall");
+    expect(window.location.search).toContain("hidden=1");
+  });
+
+  it("omits missing area, aliases and description", () => {
+    setup("drawer=i-silk");
+    const d = within(dialog()!);
+    expect(d.queryByText(/Also:/)).toBeNull();
+    expect(
+      d.getByText("Silk travelled west along the oldest roads."),
+    ).toBeTruthy();
+    expect(d.queryByText("Istanbul")).toBeNull();
+    expect(d.getByText("The Silk Roads · p. 30")).toBeTruthy();
+    expect(
+      d.queryByRole("button", { name: "Show handwritten note" }),
+    ).toBeNull();
+  });
+
+  it("collapses to two highlights and expands the rest in place", () => {
+    const data = makeLibrary();
+    data.insights[0]!.highlightIds = ["h-1", "h-2", "h-3"];
+    setup("drawer=i-fall", makeActions(), data);
+    const d = within(dialog()!);
+    expect(d.queryByText(/Ides of March/)).toBeNull();
+    fireEvent.click(d.getByRole("button", { name: "1 more highlight" }));
+    expect(d.getByText(/Ides of March/)).toBeTruthy();
+    expect(d.queryByRole("button", { name: /more highlight/ })).toBeNull();
+  });
+
+  it("lists only highlights in the library", () => {
+    const data = makeLibrary();
+    data.insights[0]!.highlightIds = ["h-1", "h-gone"];
+    setup("drawer=i-fall", makeActions(), data);
+    expect(within(dialog()!).getAllByRole("listitem")).toHaveLength(1);
+  });
+
+  it("hides from the drawer, keeping it open and removing the row", async () => {
+    const actions = setup("drawer=i-fall");
+    await act(async () => {
+      fireEvent.click(screen.getByRole("button", { name: "Hide insight" }));
+    });
+    expect(actions.hideInsight).toHaveBeenCalledTimes(1);
+    expect(actions.hideInsight).toHaveBeenCalledWith("i-fall");
+    const d = within(dialog()!);
+    expect(d.getByText("Hidden")).toBeTruthy();
+    expect(d.getByRole("button", { name: "Restore" })).toBeTruthy();
+    expect(screen.getAllByText("Fall of Constantinople")).toHaveLength(1);
+
+    await act(async () => {
+      fireEvent.click(d.getByRole("button", { name: "Restore" }));
+    });
+    expect(actions.restoreInsight).toHaveBeenCalledWith("i-fall");
+    expect(d.getByRole("button", { name: "Hide insight" })).toBeTruthy();
+  });
+
+  it("rolls back a failed hide and shows the error in the drawer", async () => {
+    setup(
+      "drawer=i-fall",
+      makeActions({
+        hideInsight: vi.fn().mockResolvedValue({ ok: false, error: "Nope." }),
+      }),
+    );
+    await act(async () => {
+      fireEvent.click(screen.getByRole("button", { name: "Hide insight" }));
+    });
+    const d = within(dialog()!);
+    expect(d.getByRole("alert").textContent).toBe("Nope.");
+    expect(d.getByRole("button", { name: "Hide insight" })).toBeTruthy();
   });
 });

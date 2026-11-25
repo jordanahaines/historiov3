@@ -7,14 +7,23 @@ const COLORS: Record<InsightType, string> = {
   concept: "bg-type-concept",
 };
 
-type TypeDotProps = { type: InsightType; faded?: boolean };
+type TypeDotProps = {
+  type: InsightType;
+  faded?: boolean;
+  /** Nudge down to sit on a text baseline (default); off when centred in a flex row. */
+  baseline?: boolean;
+};
 
-export function TypeDot({ type, faded = false }: TypeDotProps) {
+export function TypeDot({
+  type,
+  faded = false,
+  baseline = true,
+}: TypeDotProps) {
   return (
     <span
       role="img"
       aria-label={type}
-      className={`mt-[0.55em] inline-block size-2 shrink-0 rounded-full ${COLORS[type]} ${
+      className={`${baseline ? "mt-[0.55em]" : ""} inline-block size-2 shrink-0 rounded-full ${COLORS[type]} ${
         faded ? "opacity-40" : ""
       }`}
     />
