@@ -948,9 +948,15 @@ describe("Retrying a highlight", () => {
       }),
       stuckLibrary(),
     );
-    await click(retryButton("h-1")!);
+    const button = retryButton("h-1")!;
+    button.focus();
+    await click(button);
     expect(row("h-1").getByText("Retrying…")).toBeTruthy();
     expect(retryButton("h-1")).toBeNull();
+    // The same button, still focused, now inert.
+    expect(document.activeElement).toBe(button);
+    expect(button.getAttribute("aria-disabled")).toBe("true");
+    await click(button);
     // The click retried; it did not also open the drawer.
     expect(screen.queryByRole("dialog")).toBeNull();
     expect(actions.retryHighlight).toHaveBeenCalledTimes(1);
@@ -1006,6 +1012,24 @@ describe("Retrying a highlight", () => {
     expect(row("h-1").getByText("Couldn't start it.")).toBeTruthy();
     expect(retryButton("h-1")).toBeTruthy();
     expect(row("h-1").getByRole("img", { name: /Failed/ })).toBeTruthy();
+  });
+
+  it("drops the refusal once a reload shows the highlight moved on", async () => {
+    setup(
+      "lens=highlights",
+      makeActions({
+        retryHighlight: vi
+          .fn()
+          .mockResolvedValue({ ok: false, error: "Not retryable." }),
+        refreshLibrary: vi
+          .fn()
+          .mockResolvedValue({ ok: true, data: finishedLibrary() }),
+      }),
+      stuckLibrary(),
+    );
+    await click(retryButton("h-1")!);
+    expect(row("h-1").queryByText("Not retryable.")).toBeNull();
+    expect(retryButton("h-1")).toBeNull();
   });
 
   it("recovers when the request throws", async () => {

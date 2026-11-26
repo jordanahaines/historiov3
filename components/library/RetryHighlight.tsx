@@ -17,7 +17,8 @@ export function RetryHighlight({
   variant,
 }: RetryHighlightProps) {
   const { canRetry, retrying, error, onRetry } = retry;
-  if (!canRetry && !retrying && !error) return null;
+  // A refusal's message goes away once a reload shows the highlight moved on.
+  if (!canRetry && !retrying) return null;
 
   const explanation =
     status === "failed"
@@ -27,20 +28,22 @@ export function RetryHighlight({
 
   return (
     <div aria-live="polite" className="flex flex-col items-start gap-1">
-      {variant === "drawer" && canRetry && !retrying ? (
+      {variant === "drawer" && !retrying ? (
         <p className="text-ink-muted text-xs">{explanation}</p>
       ) : null}
-      {retrying ? (
-        <span className="text-ink-muted text-[13px]">Retrying…</span>
-      ) : canRetry ? (
-        <button
-          type="button"
-          onClick={onRetry}
-          className="text-link focus-visible:outline-link text-[13px] font-medium hover:underline focus-visible:outline-2"
-        >
-          {label}
-        </button>
-      ) : null}
+      {/* One button for both states, so keyboard focus stays on it. */}
+      <button
+        type="button"
+        aria-disabled={retrying || undefined}
+        onClick={retrying ? undefined : onRetry}
+        className={`focus-visible:outline-link text-[13px] focus-visible:outline-2 ${
+          retrying
+            ? "text-ink-muted cursor-default"
+            : "text-link font-medium hover:underline"
+        }`}
+      >
+        {retrying ? "Retrying…" : label}
+      </button>
       {error && !retrying ? (
         <p className="text-type-event text-xs">{error}</p>
       ) : null}
