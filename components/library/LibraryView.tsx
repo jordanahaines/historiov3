@@ -47,11 +47,27 @@ const PLACEHOLDERS: Record<Lens, string> = {
   insights: "Search insights",
 };
 
+/** Removes book ids that aren't in this library from Book conditions; a condition left empty is dropped. */
+function dropUnknownBooks(filter: FilterState, bookIds: Set<string>) {
+  const conditions = filter.conditions.flatMap((condition) => {
+    if (condition.field !== "book" || !Array.isArray(condition.value)) {
+      return [condition];
+    }
+    const value = condition.value.filter(
+      (id) => typeof id === "string" && bookIds.has(id),
+    );
+    return value.length > 0 ? [{ ...condition, value }] : [];
+  });
+  return { ...filter, conditions };
+}
+
 /** Parses the URL, dropping scope ids that aren't in this library (stale or foreign links). */
 function restoreView(search: string, data: LibraryData) {
   const parsed = parseViewState(search);
+  const bookIds = new Set(data.books.map((b) => b.id));
   return {
     ...parsed,
+    filter: dropUnknownBooks(parsed.filter, bookIds),
     bookId: data.books.some((b) => b.id === parsed.bookId)
       ? parsed.bookId
       : null,
@@ -407,7 +423,7 @@ export function LibraryView({
     >
       <div
         ref={mastRef}
-        className="bg-paper sticky top-[var(--nav-h)] z-20 -mx-6 px-6 pt-5 pb-1"
+        className="bg-paper sticky top-[var(--nav-h)] z-20 -mx-6 px-6 pt-5 pb-0"
       >
         <SectionMenu lens={lens} counts={counts} onSelect={selectLens} />
         <div className="mt-3 flex flex-wrap items-center gap-x-6 gap-y-1">
@@ -462,7 +478,7 @@ export function LibraryView({
           </div>
         </div>
       </div>
-      <div className="mt-2">
+      <div className="mt-3">
         {emptyLibrary ? (
           <p className="text-ink-secondary py-10">
             No books yet. Send a notebook from your Kindle Scribe.

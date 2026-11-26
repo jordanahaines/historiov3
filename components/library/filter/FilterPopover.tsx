@@ -63,6 +63,16 @@ export function FilterPopover({
   const buttonRef = useRef<HTMLButtonElement>(null);
   const dialogRef = useRef<HTMLDivElement>(null);
   const fields: FieldDef<never>[] = fieldsFor(lens);
+  // Stable row keys, so removing a row doesn't hand its state to the next one.
+  const [rows, setRows] = useState(() => ({
+    keys: filter.conditions.map((_, i) => i),
+    next: filter.conditions.length,
+  }));
+  if (rows.keys.length !== filter.conditions.length) {
+    // The filter changed from outside (Clear all, URL restore): re-key.
+    const keys = filter.conditions.map((_, i) => rows.next + i);
+    setRows({ keys, next: rows.next + keys.length });
+  }
 
   useEffect(() => {
     if (!open) return;
@@ -105,6 +115,22 @@ export function FilterPopover({
       }));
   }
 
+  function addCondition() {
+    setRows({ keys: [...rows.keys, rows.next], next: rows.next + 1 });
+    onChange({
+      ...filter,
+      conditions: [...filter.conditions, blankCondition(fields)],
+    });
+  }
+
+  function removeCondition(index: number) {
+    setRows({ ...rows, keys: rows.keys.filter((_, i) => i !== index) });
+    onChange({
+      ...filter,
+      conditions: filter.conditions.filter((_, i) => i !== index),
+    });
+  }
+
   function updateCondition(index: number, next: Condition) {
     onChange({
       ...filter,
@@ -130,8 +156,19 @@ export function FilterPopover({
         aria-haspopup="dialog"
         aria-expanded={open}
         onClick={toggle}
-        className="text-link focus-visible:outline-link cursor-pointer font-medium focus-visible:outline-2"
+        className="bg-ink text-paper focus-visible:outline-link inline-flex h-8 cursor-pointer items-center gap-1.5 px-3 text-sm font-medium hover:opacity-85 focus-visible:outline-2 focus-visible:outline-offset-2"
       >
+        <svg
+          aria-hidden="true"
+          viewBox="0 0 16 16"
+          className="size-3.5 shrink-0"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="1.5"
+          strokeLinecap="round"
+        >
+          <path d="M2 4h12M4.5 8h7M7 12h2" />
+        </svg>
         {activeCount > 0 ? `Filter (${activeCount})` : "Filter"}
       </button>
       {open ? (
@@ -150,7 +187,7 @@ export function FilterPopover({
           <div className="flex flex-col gap-2">
             {filter.conditions.map((condition, index) => (
               <FilterConditionRow
-                key={index}
+                key={rows.keys[index] ?? index}
                 index={index}
                 join={filter.join}
                 condition={condition}
@@ -158,24 +195,14 @@ export function FilterPopover({
                 optionsFor={optionsFor}
                 onJoinChange={(join) => onChange({ ...filter, join })}
                 onChange={(next) => updateCondition(index, next)}
-                onRemove={() =>
-                  onChange({
-                    ...filter,
-                    conditions: filter.conditions.filter((_, i) => i !== index),
-                  })
-                }
+                onRemove={() => removeCondition(index)}
               />
             ))}
           </div>
           <div className="flex items-center justify-between pt-1 text-xs">
             <button
               type="button"
-              onClick={() =>
-                onChange({
-                  ...filter,
-                  conditions: [...filter.conditions, blankCondition(fields)],
-                })
-              }
+              onClick={addCondition}
               className="text-link focus-visible:outline-link cursor-pointer font-medium focus-visible:outline-2"
             >
               + Add condition
