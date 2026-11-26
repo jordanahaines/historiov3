@@ -21,6 +21,19 @@ function makeActions(over: Partial<LibraryActions> = {}): LibraryActions {
     getNoteImageUrl: vi
       .fn()
       .mockResolvedValue({ ok: true, url: "https://signed/x.png" }),
+    retryHighlight: vi.fn().mockResolvedValue({
+      ok: true,
+      status: "pending",
+      updatedAt: new Date().toISOString(),
+    }),
+    getHighlightStatus: vi.fn().mockResolvedValue({
+      ok: true,
+      status: "pending",
+      updatedAt: new Date().toISOString(),
+    }),
+    refreshLibrary: vi
+      .fn()
+      .mockResolvedValue({ ok: true, data: makeLibrary() }),
     ...over,
   };
 }
@@ -856,5 +869,192 @@ describe("LibraryView filter builder", () => {
     openFilter();
     fireEvent.pointerDown(document.body);
     expect(screen.queryByRole("dialog")).toBeNull();
+  });
+});
+
+describe("Retrying a highlight", () => {
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
+  /** h-1 failed, h-2 stalled pending, h-3 researched. */
+  function stuckLibrary() {
+    const data = makeLibrary();
+    data.highlights[0] = {
+      ...data.highlights[0],
+      status: "failed",
+      insights: [],
+    };
+    return data;
+  }
+
+  /** The same library once h-1 has been researched. */
+  function finishedLibrary() {
+    const data = stuckLibrary();
+    data.highlights[0] = {
+      ...data.highlights[0],
+      status: "researched",
+      insights: [{ id: "i-fall", title: "Fall of Constantinople" }],
+    };
+    return data;
+  }
+
+  const row = (id: string) =>
+    within(document.querySelector<HTMLElement>(`tr[data-drawer-row="${id}"]`)!);
+  const retryButton = (id: string) =>
+    row(id).queryByRole("button", { name: "Retry" });
+  const advance = (ms: number) =>
+    act(async () => {
+      await vi.advanceTimersByTimeAsync(ms);
+    });
+  const click = (element: HTMLElement) =>
+    act(async () => {
+      fireEvent.click(element);
+    });
+  const at = (status: "pending" | "contextualized" | "researched") =>
+    vi.fn().mockResolvedValue({
+      ok: true,
+      status,
+      updatedAt: new Date().toISOString(),
+    });
+
+  it("offers Retry only on failed and stalled highlights", () => {
+    const data = stuckLibrary();
+    data.highlights.push(
+      {
+        ...data.highlights[1],
+        id: "h-fresh",
+        updatedAt: new Date().toISOString(),
+      },
+      { ...data.highlights[1], id: "h-skip", status: "discarded" },
+    );
+    setup("lens=highlights", makeActions(), data);
+    expect(retryButton("h-1")).toBeTruthy();
+    expect(retryButton("h-2")).toBeTruthy();
+    expect(retryButton("h-3")).toBeNull();
+    expect(retryButton("h-fresh")).toBeNull();
+    expect(retryButton("h-skip")).toBeNull();
+  });
+
+  it("retries once, polls, and refreshes the data when it finishes", async () => {
+    vi.useFakeTimers();
+    const actions = setup(
+      "lens=highlights",
+      makeActions({
+        getHighlightStatus: at("researched"),
+        refreshLibrary: vi
+          .fn()
+          .mockResolvedValue({ ok: true, data: finishedLibrary() }),
+      }),
+      stuckLibrary(),
+    );
+    const button = retryButton("h-1")!;
+    button.focus();
+    await click(button);
+    expect(row("h-1").getByText("Retrying…")).toBeTruthy();
+    expect(retryButton("h-1")).toBeNull();
+    // The same button, still focused, now inert.
+    expect(document.activeElement).toBe(button);
+    expect(button.getAttribute("aria-disabled")).toBe("true");
+    await click(button);
+    // The click retried; it did not also open the drawer.
+    expect(screen.queryByRole("dialog")).toBeNull();
+    expect(actions.retryHighlight).toHaveBeenCalledTimes(1);
+    expect(actions.retryHighlight).toHaveBeenCalledWith("h-1");
+
+    await advance(5_000);
+    expect(actions.getHighlightStatus).toHaveBeenCalledWith("h-1");
+    expect(actions.refreshLibrary).toHaveBeenCalledTimes(1);
+    expect(row("h-1").queryByText("Retrying…")).toBeNull();
+    expect(
+      row("h-1").getByRole("button", { name: /Fall of Constantinople/ }),
+    ).toBeTruthy();
+    expect(window.location.search).toBe("?lens=highlights");
+
+    await advance(20_000);
+    expect(actions.getHighlightStatus).toHaveBeenCalledTimes(1);
+  });
+
+  it("gives up quietly after five minutes", async () => {
+    vi.useFakeTimers();
+    const actions = setup(
+      "lens=highlights",
+      makeActions({ getHighlightStatus: at("contextualized") }),
+      stuckLibrary(),
+    );
+    await click(retryButton("h-1")!);
+    await advance(5 * 60_000);
+    expect(row("h-1").queryByText("Retrying…")).toBeNull();
+    expect(retryButton("h-1")).toBeNull();
+    expect(
+      row("h-1").getByRole("img", { name: /Contextualized/ }),
+    ).toBeTruthy();
+    expect(actions.refreshLibrary).not.toHaveBeenCalled();
+    const calls = vi.mocked(actions.getHighlightStatus).mock.calls.length;
+    await advance(20_000);
+    expect(actions.getHighlightStatus).toHaveBeenCalledTimes(calls);
+  });
+
+  it("shows a refusal inline and offers Retry again", async () => {
+    setup(
+      "lens=highlights",
+      makeActions({
+        retryHighlight: vi
+          .fn()
+          .mockResolvedValue({ ok: false, error: "Couldn't start it." }),
+        refreshLibrary: vi
+          .fn()
+          .mockResolvedValue({ ok: true, data: stuckLibrary() }),
+      }),
+      stuckLibrary(),
+    );
+    await click(retryButton("h-1")!);
+    expect(row("h-1").getByText("Couldn't start it.")).toBeTruthy();
+    expect(retryButton("h-1")).toBeTruthy();
+    expect(row("h-1").getByRole("img", { name: /Failed/ })).toBeTruthy();
+  });
+
+  it("drops the refusal once a reload shows the highlight moved on", async () => {
+    setup(
+      "lens=highlights",
+      makeActions({
+        retryHighlight: vi
+          .fn()
+          .mockResolvedValue({ ok: false, error: "Not retryable." }),
+        refreshLibrary: vi
+          .fn()
+          .mockResolvedValue({ ok: true, data: finishedLibrary() }),
+      }),
+      stuckLibrary(),
+    );
+    await click(retryButton("h-1")!);
+    expect(row("h-1").queryByText("Not retryable.")).toBeNull();
+    expect(retryButton("h-1")).toBeNull();
+  });
+
+  it("recovers when the request throws", async () => {
+    setup(
+      "lens=highlights",
+      makeActions({
+        retryHighlight: vi.fn().mockRejectedValue(new Error("offline")),
+      }),
+      stuckLibrary(),
+    );
+    await click(retryButton("h-1")!);
+    expect(row("h-1").getByText(/Couldn't start the retry/)).toBeTruthy();
+    expect(retryButton("h-1")).toBeTruthy();
+  });
+
+  it("works from the drawer, which stays open", async () => {
+    const actions = setup(
+      "lens=highlights&drawer=h-1",
+      makeActions(),
+      stuckLibrary(),
+    );
+    const drawer = within(screen.getByRole("dialog"));
+    expect(drawer.getByText(/Processing hit an error\./)).toBeTruthy();
+    await click(drawer.getByRole("button", { name: "Retry processing" }));
+    expect(drawer.getByText("Retrying…")).toBeTruthy();
+    expect(actions.retryHighlight).toHaveBeenCalledWith("h-1");
   });
 });

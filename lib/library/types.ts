@@ -29,6 +29,8 @@ export type LibraryHighlight = {
   status: HighlightStatus;
   /** ISO timestamp: annotated_at, falling back to created_at. */
   capturedAt: string;
+  /** ISO timestamp the row last changed; used to spot a stalled highlight. */
+  updatedAt: string;
   /** Published insights this highlight feeds. */
   insights: { id: string; title: string }[];
 };

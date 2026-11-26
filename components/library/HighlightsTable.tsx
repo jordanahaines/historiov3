@@ -1,12 +1,14 @@
 import { HighlightRow } from "@/components/library/HighlightRow";
 import { TableHeader } from "@/components/library/TableHeader";
 import type { NoteUrlResult } from "@/components/library/library-actions";
+import type { HighlightRetryState } from "@/components/library/use-highlight-retries";
 import type { LibraryHighlight } from "@/lib/library/types";
 
 type HighlightsTableProps = {
   highlights: LibraryHighlight[];
   /** The highlight open in the drawer, highlighted in the table. */
   selectedId: string | null;
+  retryStateFor: (highlight: LibraryHighlight) => HighlightRetryState;
   onOpen: (highlightId: string) => void;
   onShowInsights: (highlight: LibraryHighlight) => void;
   getNoteImageUrl: (highlightId: string) => Promise<NoteUrlResult>;
@@ -15,6 +17,7 @@ type HighlightsTableProps = {
 export function HighlightsTable({
   highlights,
   selectedId,
+  retryStateFor,
   onOpen,
   onShowInsights,
   getNoteImageUrl,
@@ -35,6 +38,7 @@ export function HighlightsTable({
             key={highlight.id}
             highlight={highlight}
             selected={highlight.id === selectedId}
+            retry={retryStateFor(highlight)}
             onOpen={onOpen}
             onShowInsights={onShowInsights}
             getNoteImageUrl={getNoteImageUrl}

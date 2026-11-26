@@ -3,9 +3,12 @@ import { getLibrary } from "@/lib/authz/library";
 import { requireViewer } from "@/lib/authz/viewer";
 
 import {
+  getHighlightStatusAction,
   getNoteImageUrlAction,
   hideInsightAction,
+  refreshLibraryAction,
   restoreInsightAction,
+  retryHighlightAction,
 } from "./actions";
 
 type LibraryPageProps = {
@@ -33,6 +36,9 @@ export default async function LibraryPage({ searchParams }: LibraryPageProps) {
         hideInsight: hideInsightAction,
         restoreInsight: restoreInsightAction,
         getNoteImageUrl: getNoteImageUrlAction,
+        retryHighlight: retryHighlightAction,
+        getHighlightStatus: getHighlightStatusAction,
+        refreshLibrary: refreshLibraryAction,
       }}
     />
   );
