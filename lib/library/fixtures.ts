@@ -33,6 +33,7 @@ export function makeLibrary(): LibraryData {
         page: 12,
         status: "researched",
         capturedAt: "2026-11-09T10:00:00Z",
+        updatedAt: "2026-11-09T10:00:00Z",
         insights: [{ id: "i-fall", title: "Fall of Constantinople" }],
       },
       {
@@ -44,6 +45,7 @@ export function makeLibrary(): LibraryData {
         page: 30,
         status: "pending",
         capturedAt: "2026-11-01T10:00:00Z",
+        updatedAt: "2026-11-01T10:00:00Z",
         insights: [],
       },
       {
@@ -55,6 +57,7 @@ export function makeLibrary(): LibraryData {
         page: 5,
         status: "researched",
         capturedAt: "2026-11-12T10:00:00Z",
+        updatedAt: "2026-11-12T10:00:00Z",
         insights: [{ id: "i-ides", title: "Assassination of Caesar" }],
       },
     ],

@@ -66,11 +66,13 @@ async function loadHighlights(viewerId: string): Promise<LibraryHighlight[]> {
     page: number | null;
     status: HighlightStatus;
     captured_at: string;
+    updated_at: string;
     insights: { id: string; title: string }[];
   }>(sql`
     select h.id, h.book_id, h.highlighted_text, h.note_text,
       (h.note_image_path is not null) as has_note_image, h.page, h.status,
       ${sql.raw(ISO("coalesce(h.annotated_at, h.created_at)"))} as captured_at,
+      ${sql.raw(ISO("h.updated_at"))} as updated_at,
       coalesce((
         select json_agg(json_build_object('id', i.id, 'title', i.title) order by i.title)
         from v3.insight_highlights ih
@@ -92,6 +94,7 @@ async function loadHighlights(viewerId: string): Promise<LibraryHighlight[]> {
     page: row.page,
     status: row.status,
     capturedAt: row.captured_at,
+    updatedAt: row.updated_at,
     insights: row.insights,
   }));
 }

@@ -1,7 +1,8 @@
-import { and, eq, inArray } from "drizzle-orm";
+import { and, eq, inArray, sql } from "drizzle-orm";
 
 import { db } from "@/lib/db";
 import { highlights, userBooks } from "@/lib/db/schema";
+import { STALLED_AFTER_MS } from "@/lib/library/retry";
 
 export type Highlight = typeof highlights.$inferSelect;
 
@@ -188,4 +189,109 @@ export async function getNoteImagePathForViewer(
     .where(and(eq(highlights.id, highlightId), eq(highlights.userId, viewerId)))
     .limit(1);
   return row?.path ?? null;
+}
+
+/** The viewer's highlight, in a book still in their library. */
+export async function getHighlightStatusForViewer(
+  viewerId: string,
+  highlightId: string,
+): Promise<{ status: Highlight["status"]; updatedAt: Date } | null> {
+  const [row] = await db
+    .select({ status: highlights.status, updatedAt: highlights.updatedAt })
+    .from(highlights)
+    .innerJoin(
+      userBooks,
+      and(
+        eq(userBooks.userId, highlights.userId),
+        eq(userBooks.bookId, highlights.bookId),
+        eq(userBooks.status, "active"),
+      ),
+    )
+    .where(and(eq(highlights.id, highlightId), eq(highlights.userId, viewerId)))
+    .limit(1);
+  return row ?? null;
+}
+
+export type HighlightRetryClaim =
+  | {
+      outcome: "started";
+      /** What the row was before the claim, to undo it if nothing starts. */
+      previousStatus: Highlight["status"];
+      status: Highlight["status"];
+      updatedAt: Date;
+    }
+  | { outcome: "not_found" }
+  | { outcome: "not_retryable" };
+
+/**
+ * Atomically claims a retry: a `failed` highlight goes back to the step it
+ * reached, and a stalled `pending` / `contextualized` one has `updated_at`
+ * bumped. Either way a second claim finds nothing to take, so two clicks can't
+ * start two runs. The row lock makes a concurrent claim re-check the new row.
+ */
+export async function claimHighlightRetryForViewer(
+  viewerId: string,
+  highlightId: string,
+  now: Date = new Date(),
+): Promise<HighlightRetryClaim> {
+  const stalledBefore = new Date(now.getTime() - STALLED_AFTER_MS);
+  const rows = await db.execute<{
+    previous_status: Highlight["status"];
+    status: Highlight["status"];
+  }>(sql`
+    with target as (
+      select h.id, h.status
+      from v3.highlights h
+      join v3.user_books ub
+        on ub.user_id = h.user_id and ub.book_id = h.book_id
+        and ub.status = 'active'
+      where h.id = ${highlightId} and h.user_id = ${viewerId}
+        and (
+          h.status = 'failed'
+          or (
+            h.status in ('pending', 'contextualized')
+            and h.updated_at <= ${stalledBefore.toISOString()}::timestamptz
+          )
+        )
+      for update of h
+    )
+    update v3.highlights h
+    set status = case
+          when target.status <> 'failed' then h.status
+          when h.context is null then 'pending'::v3.highlight_status
+          else 'contextualized'::v3.highlight_status
+        end,
+        updated_at = ${now.toISOString()}::timestamptz
+    from target
+    where h.id = target.id
+    returning target.status as previous_status, h.status as status
+  `);
+  const [claimed] = Array.from(rows);
+  if (claimed) {
+    return {
+      outcome: "started",
+      previousStatus: claimed.previous_status,
+      status: claimed.status,
+      updatedAt: now,
+    };
+  }
+  const existing = await getHighlightStatusForViewer(viewerId, highlightId);
+  return { outcome: existing ? "not_retryable" : "not_found" };
+}
+
+/**
+ * Undoes a claim whose workflow never started, so the highlight is retryable
+ * again at once. A no-op if anything else has changed the row since.
+ */
+export async function releaseHighlightRetry(
+  highlightId: string,
+  claim: { previousStatus: Highlight["status"]; status: Highlight["status"] },
+): Promise<void> {
+  const stalledAt = new Date(Date.now() - STALLED_AFTER_MS);
+  await db
+    .update(highlights)
+    .set({ status: claim.previousStatus, updatedAt: stalledAt })
+    .where(
+      and(eq(highlights.id, highlightId), eq(highlights.status, claim.status)),
+    );
 }

@@ -12,6 +12,7 @@ import type { LibraryActions } from "@/components/library/library-actions";
 import { ScopeBar, type ScopeChip } from "@/components/library/ScopeBar";
 import { SearchField } from "@/components/library/SearchField";
 import { SectionMenu } from "@/components/library/SectionMenu";
+import { useHighlightRetries } from "@/components/library/use-highlight-retries";
 import { applyInsightStatus } from "@/lib/library/apply-insight-status";
 import {
   activeCountFor,
@@ -26,6 +27,7 @@ import {
   sectionCounts,
   type SortDirection,
 } from "@/lib/library/filter";
+import { applyHighlightStatus } from "@/lib/library/retry";
 import type {
   InsightStatus,
   LibraryData,
@@ -106,6 +108,11 @@ export function LibraryView({
   actions,
 }: LibraryViewProps) {
   const [data, setData] = useState(initialData);
+  // The latest data, for the popstate listener (a retry can reload it).
+  const dataRef = useRef(data);
+  useEffect(() => {
+    dataRef.current = data;
+  }, [data]);
   const [view, setView] = useState(() =>
     restoreView(initialSearch, initialData),
   );
@@ -122,7 +129,8 @@ export function LibraryView({
     observer.observe(mast);
     return () => observer.disconnect();
   }, []);
-  const inFlight = useRef(new Set<string>());
+  // Insight id -> the status a hide/restore request is currently saving.
+  const inFlight = useRef(new Map<string, InsightStatus>());
   const [direction, setDirection] = useState<SortDirection>("asc");
   const [errors, setErrors] = useState<Record<string, string>>({});
 
@@ -149,13 +157,13 @@ export function LibraryView({
   // Back / Forward: restore the view from the URL we landed on.
   useEffect(() => {
     function onPopState() {
-      const restored = restoreView(window.location.search, initialData);
+      const restored = restoreView(window.location.search, dataRef.current);
       previousView.current = restored;
       setView(restored);
     }
     window.addEventListener("popstate", onPopState);
     return () => window.removeEventListener("popstate", onPopState);
-  }, [initialData]);
+  }, []);
 
   const { lens, q, showHidden } = view;
   const scopeBook = data.books.find((book) => book.id === view.bookId) ?? null;
@@ -342,7 +350,7 @@ export function LibraryView({
     // Already in the requested state (stale click): nothing to change or roll back.
     if (data.insights.find((insight) => insight.id === id)?.status === status)
       return;
-    inFlight.current.add(id);
+    inFlight.current.set(id, status);
     const inverse: InsightStatus = status === "hidden" ? "published" : "hidden";
     setErrors((current) =>
       Object.fromEntries(Object.entries(current).filter(([key]) => key !== id)),
@@ -364,6 +372,22 @@ export function LibraryView({
     }
     inFlight.current.delete(id);
   }
+
+  const retryStateFor = useHighlightRetries({
+    actions,
+    onStatus: (id, status, updatedAt) =>
+      setData((current) =>
+        applyHighlightStatus(current, id, status, updatedAt),
+      ),
+    // A reload can predate a hide/restore still being saved: keep that change.
+    onRefresh: (fresh) =>
+      setData(
+        Array.from(inFlight.current).reduce(
+          (next, [id, status]) => applyInsightStatus(next, id, status),
+          fresh,
+        ),
+      ),
+  });
 
   function showHighlightInsights(highlight: LibraryHighlight) {
     setView((current) => ({
@@ -515,6 +539,7 @@ export function LibraryView({
           <HighlightsTable
             highlights={highlights}
             selectedId={drawerId}
+            retryStateFor={retryStateFor}
             onOpen={openDrawer}
             onShowInsights={showHighlightInsights}
             getNoteImageUrl={actions.getNoteImageUrl}
@@ -540,6 +565,7 @@ export function LibraryView({
           highlight={drawerHighlight}
           book={booksById[drawerHighlight.bookId]}
           insights={drawerHighlightInsights}
+          retry={retryStateFor(drawerHighlight)}
           onClose={() => closeDrawer(true)}
           onOpenInsight={openInsightDrawer}
           onOpenBook={showBookHighlights}

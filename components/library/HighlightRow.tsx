@@ -1,5 +1,7 @@
 import { NoteImagePopover } from "@/components/library/NoteImagePopover";
+import { RetryHighlight } from "@/components/library/RetryHighlight";
 import { StatusSteps } from "@/components/library/StatusSteps";
+import type { HighlightRetryState } from "@/components/library/use-highlight-retries";
 import type { NoteUrlResult } from "@/components/library/library-actions";
 import { formatDate } from "@/lib/library/format-date";
 import type { LibraryHighlight } from "@/lib/library/types";
@@ -7,6 +9,7 @@ import type { LibraryHighlight } from "@/lib/library/types";
 type HighlightRowProps = {
   highlight: LibraryHighlight;
   selected?: boolean;
+  retry: HighlightRetryState;
   onOpen: (highlightId: string) => void;
   onShowInsights: (highlight: LibraryHighlight) => void;
   getNoteImageUrl: (highlightId: string) => Promise<NoteUrlResult>;
@@ -17,6 +20,7 @@ const MAX_LINKS = 2;
 export function HighlightRow({
   highlight,
   selected = false,
+  retry,
   onOpen,
   onShowInsights,
   getNoteImageUrl,
@@ -90,7 +94,14 @@ export function HighlightRow({
         )}
       </td>
       <td className="py-3 pr-4">
-        <StatusSteps status={highlight.status} />
+        <div className="flex flex-col items-start gap-1.5">
+          <StatusSteps status={highlight.status} />
+          <RetryHighlight
+            variant="row"
+            status={highlight.status}
+            retry={retry}
+          />
+        </div>
       </td>
       <td className="py-3 text-sm whitespace-nowrap">
         {formatDate(highlight.capturedAt)}

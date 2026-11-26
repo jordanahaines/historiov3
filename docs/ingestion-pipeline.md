@@ -54,6 +54,8 @@ pnpm ingest:pdf path/to/notebook.pdf --user <profile-id> --no-process
 pnpm pipeline:resume [--user <profile-id>] [--concurrency N]   # re-run pending / contextualized / failed highlights
 ```
 
+A single stuck highlight can also be retried from Library → Highlights (`docs/auth-and-library.md`).
+
 The CLIs run workflow step functions directly in-process (outside the workflow runtime they're plain async functions).
 
 ## Tests

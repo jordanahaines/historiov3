@@ -7,7 +7,9 @@ import { DrawerPanel } from "@/components/library/DrawerPanel";
 import { EntityIcon } from "@/components/library/EntityIcon";
 import { NoteImagePopover } from "@/components/library/NoteImagePopover";
 import type { NoteUrlResult } from "@/components/library/library-actions";
+import { RetryHighlight } from "@/components/library/RetryHighlight";
 import { TypeDot } from "@/components/library/TypeDot";
+import type { HighlightRetryState } from "@/components/library/use-highlight-retries";
 import { formatDate } from "@/lib/library/format-date";
 import { periodLabel } from "@/lib/library/period-label";
 import { highlightStatusLabel } from "@/lib/library/status-label";
@@ -22,6 +24,7 @@ type HighlightDrawerProps = {
   book: LibraryBook | undefined;
   /** The published insights this highlight became, in display order. */
   insights: LibraryInsight[];
+  retry: HighlightRetryState;
   onClose: () => void;
   onOpenInsight: (insightId: string) => void;
   onOpenBook: (bookId: string) => void;
@@ -33,6 +36,7 @@ export function HighlightDrawer({
   highlight,
   book,
   insights,
+  retry,
   onClose,
   onOpenInsight,
   onOpenBook,
@@ -87,6 +91,11 @@ export function HighlightDrawer({
             {"  ·  "}
             {status.label}
           </p>
+          <RetryHighlight
+            variant="drawer"
+            status={highlight.status}
+            retry={retry}
+          />
         </div>
         {hasNote ? (
           <div className="flex flex-col gap-2">
