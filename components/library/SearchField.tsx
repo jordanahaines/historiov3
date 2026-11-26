@@ -9,8 +9,12 @@ export function SearchField({
   placeholder,
   onChange,
 }: SearchFieldProps) {
+  const widthClass = value ? "w-80" : "w-44";
+
   return (
-    <div className="border-border-strong focus-within:border-link flex w-full max-w-md items-center gap-2 border-b px-1">
+    <div
+      className={`border-border-strong focus-within:border-link flex h-9 max-w-full shrink-0 items-center gap-2 border-b px-1 transition-[width] duration-200 ease-out focus-within:w-80 motion-reduce:transition-none ${widthClass}`}
+    >
       <svg
         aria-hidden="true"
         viewBox="0 0 16 16"

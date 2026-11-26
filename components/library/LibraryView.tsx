@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 
 import { BooksTable } from "@/components/library/BooksTable";
+import { FilterPopover } from "@/components/library/filter/FilterPopover";
 import { HighlightDrawer } from "@/components/library/HighlightDrawer";
 import { HighlightsTable } from "@/components/library/HighlightsTable";
 import { InsightDrawer } from "@/components/library/InsightDrawer";
@@ -12,6 +13,11 @@ import { ScopeBar, type ScopeChip } from "@/components/library/ScopeBar";
 import { SearchField } from "@/components/library/SearchField";
 import { SectionMenu } from "@/components/library/SectionMenu";
 import { applyInsightStatus } from "@/lib/library/apply-insight-status";
+import {
+  activeCountFor,
+  EMPTY_FILTER,
+  type FilterState,
+} from "@/lib/library/filter-conditions";
 import {
   filterBooks,
   filterHighlights,
@@ -41,11 +47,27 @@ const PLACEHOLDERS: Record<Lens, string> = {
   insights: "Search insights",
 };
 
+/** Removes book ids that aren't in this library from Book conditions; a condition left empty is dropped. */
+function dropUnknownBooks(filter: FilterState, bookIds: Set<string>) {
+  const conditions = filter.conditions.flatMap((condition) => {
+    if (condition.field !== "book" || !Array.isArray(condition.value)) {
+      return [condition];
+    }
+    const value = condition.value.filter(
+      (id) => typeof id === "string" && bookIds.has(id),
+    );
+    return value.length > 0 ? [{ ...condition, value }] : [];
+  });
+  return { ...filter, conditions };
+}
+
 /** Parses the URL, dropping scope ids that aren't in this library (stale or foreign links). */
 function restoreView(search: string, data: LibraryData) {
   const parsed = parseViewState(search);
+  const bookIds = new Set(data.books.map((b) => b.id));
   return {
     ...parsed,
+    filter: dropUnknownBooks(parsed.filter, bookIds),
     bookId: data.books.some((b) => b.id === parsed.bookId)
       ? parsed.bookId
       : null,
@@ -152,6 +174,7 @@ export function LibraryView({
     [scopeBook, scopeHighlight, scopeInsight, lens],
   );
 
+  const filterCount = activeCountFor(lens, view.filter);
   // Read live from data (not a snapshot) so hide/restore updates it at once;
   // not filtered, so a hidden insight stays open while "Show hidden" is off.
   const drawerInsight =
@@ -237,12 +260,17 @@ export function LibraryView({
 
   const books = useMemo(() => filterBooks(data.books, q), [data.books, q]);
   const highlights = useMemo(
-    () => filterHighlights(data.highlights, q, scope),
-    [data.highlights, q, scope],
+    () => filterHighlights(data.highlights, q, scope, view.filter),
+    [data.highlights, q, scope, view.filter],
   );
   const insights = useMemo(
-    () => filterInsights(data.insights, q, scope, { showHidden, direction }),
-    [data.insights, q, scope, showHidden, direction],
+    () =>
+      filterInsights(data.insights, q, scope, {
+        showHidden,
+        direction,
+        filter: view.filter,
+      }),
+    [data.insights, q, scope, showHidden, direction, view.filter],
   );
   const insightTotal = useMemo(
     () =>
@@ -290,7 +318,12 @@ export function LibraryView({
       bookId: null,
       highlightId: null,
       insightId: null,
+      filter: EMPTY_FILTER,
     }));
+  }
+
+  function changeFilter(filter: FilterState) {
+    setView((current) => ({ ...current, filter }));
   }
 
   function removeChip(key: string) {
@@ -340,6 +373,7 @@ export function LibraryView({
       bookId: null,
       highlightId: highlight.id,
       insightId: null,
+      filter: EMPTY_FILTER,
     }));
   }
 
@@ -373,6 +407,7 @@ export function LibraryView({
       bookId: null,
       highlightId: null,
       insightId,
+      filter: EMPTY_FILTER,
     }));
   }
 
@@ -388,7 +423,7 @@ export function LibraryView({
     >
       <div
         ref={mastRef}
-        className="bg-paper sticky top-[var(--nav-h)] z-20 -mx-6 px-6 pt-5 pb-1"
+        className="bg-paper sticky top-[var(--nav-h)] z-20 -mx-6 px-6 pt-5 pb-0"
       >
         <SectionMenu lens={lens} counts={counts} onSelect={selectLens} />
         <div className="mt-3 flex flex-wrap items-center gap-x-6 gap-y-1">
@@ -409,7 +444,21 @@ export function LibraryView({
                   bookId: null,
                   highlightId: null,
                   insightId: null,
+                  filter: EMPTY_FILTER,
                 }))
+              }
+              canClear={filterCount > 0}
+              filterControl={
+                lens === "books" ? undefined : (
+                  <FilterPopover
+                    key={lens}
+                    lens={lens}
+                    filter={view.filter}
+                    activeCount={filterCount}
+                    books={data.books}
+                    onChange={changeFilter}
+                  />
+                )
               }
               hidden={
                 lens === "insights"
@@ -429,7 +478,7 @@ export function LibraryView({
           </div>
         </div>
       </div>
-      <div className="mt-2">
+      <div className="mt-3">
         {emptyLibrary ? (
           <p className="text-ink-secondary py-10">
             No books yet. Send a notebook from your Kindle Scribe.
@@ -447,6 +496,7 @@ export function LibraryView({
                 bookId,
                 highlightId: null,
                 insightId: null,
+                filter: EMPTY_FILTER,
               }))
             }
             onShowInsights={(bookId) =>
@@ -457,6 +507,7 @@ export function LibraryView({
                 bookId,
                 highlightId: null,
                 insightId: null,
+                filter: EMPTY_FILTER,
               }))
             }
           />

@@ -1,3 +1,10 @@
+import {
+  applyFilter,
+  EMPTY_FILTER,
+  HIGHLIGHT_FIELDS,
+  INSIGHT_FIELDS,
+  type FilterState,
+} from "@/lib/library/filter-conditions";
 import { periodValues } from "@/lib/insights/period";
 import type {
   LibraryBook,
@@ -38,8 +45,9 @@ export function filterHighlights(
   highlights: LibraryHighlight[],
   query: string,
   scope: Scope,
+  filter: FilterState = EMPTY_FILTER,
 ): LibraryHighlight[] {
-  return highlights
+  return applyFilter(highlights, HIGHLIGHT_FIELDS, filter)
     .filter((highlight) => !scope.bookId || highlight.bookId === scope.bookId)
     .filter(
       (highlight) =>
@@ -66,10 +74,14 @@ export function filterInsights(
   insights: LibraryInsight[],
   query: string,
   scope: Scope,
-  options: { showHidden: boolean; direction: SortDirection },
+  options: {
+    showHidden: boolean;
+    direction: SortDirection;
+    filter?: FilterState;
+  },
 ): LibraryInsight[] {
   const sign = options.direction === "asc" ? 1 : -1;
-  return insights
+  return applyFilter(insights, INSIGHT_FIELDS, options.filter ?? EMPTY_FILTER)
     .filter((insight) => options.showHidden || insight.status === "published")
     .filter(
       (insight) => !scope.bookId || insight.bookIds.includes(scope.bookId),
